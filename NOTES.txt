@@ -1,0 +1,25 @@
+FAIRPOT — PROJECT NOTES
+=======================
+
+What it is
+  Public iOS app (Android later) made from Split It v5.0 (repo willyros01/split).
+  The Split It web app and its repo stay untouched; Fairpot lives in willyros01/fairpot.
+  Design document: "Split It — Public App Design" v1.1 (Claude artifact).
+
+Decisions (Sep 25, 2026)
+  Name: Fairpot. Bundle ID: io.github.willyros01.fairpot
+  Home currency: a setting, default Canadian dollars (Phase 2)
+  Payment methods: general list, pre-filled with e-Transfer and GCash (Phase 2)
+  Launch: iOS first. Android deferred until 12 testers can be lined up.
+  Shell: Capacitor 8. Builds: GitHub Actions on a GitHub Mac, straight to TestFlight.
+  Storage later: SQLite (Phase 3). No cloud, no accounts, no data collected.
+
+Version history
+  v0.1.0 (Sep 25, 2026) — Phase 1: fork and strip.
+    Removed Firebase, cloud sync UI and code, service worker, 1 MB photo checks.
+    Renamed to Fairpot, pinch-zoom allowed, rate credit link added.
+    Capacitor 8 project files, placeholder icon, iOS TestFlight workflow.
+    Tested in a browser: save, history, summary, web backup restore, reload.
+
+Next
+  Phase 2 — multi-currency + home-currency setting + payment methods list.

@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fairpot">
+<title>Fairpot — Split Expenses</title>
+<style>
+  :root{
+    --bg:#f2f2f7; --card:#ffffff; --text:#1c1c1e; --sub:#6e6e73;
+    --accent:#0a84ff; --accent-soft:#e5f1ff; --green:#30a14e; --red:#d70015;
+    --border:#e5e5ea; --input-bg:#ffffff; --bar:#0a63d6; --track:#e5e5ea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#000000; --card:#1c1c1e; --text:#f2f2f7; --sub:#98989e;
+      --accent:#0a84ff; --accent-soft:#0d2a4a; --green:#32d74b; --red:#ff453a;
+      --border:#2c2c2e; --input-bg:#2c2c2e; --bar:#0a84ff; --track:#2c2c2e;
+    }
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+    padding-bottom:calc(84px + env(safe-area-inset-bottom));
+  }
+  header{
+    padding:calc(14px + env(safe-area-inset-top)) 20px 10px;
+    display:flex; justify-content:space-between; align-items:baseline;
+  }
+  header h1{font-size:26px; margin:0; letter-spacing:-0.4px;}
+  #rateBadge{font-size:12px; color:var(--sub); text-align:right; line-height:1.4;}
+  #rateBadge a{color:var(--sub);}
+  #rateBadge b{color:var(--text); font-variant-numeric:tabular-nums;}
+  main{padding:0 16px; max-width:520px; margin:0 auto;}
+  .card{
+    background:var(--card); border-radius:16px; padding:16px; margin-bottom:14px;
+    box-shadow:0 1px 2px rgba(0,0,0,.06);
+  }
+  label{display:block; font-size:13px; color:var(--sub); margin:12px 0 6px; font-weight:600;}
+  label:first-child{margin-top:0;}
+  input[type=text],input[type=number],input[type=date],input[type=email],input[type=tel],select{
+    width:100%; font-size:17px; padding:12px; border-radius:10px;
+    border:1px solid var(--border); background:var(--input-bg); color:var(--text);
+    appearance:none; -webkit-appearance:none; min-height:46px;
+  }
+  select{
+    background-image:linear-gradient(45deg,transparent 50%,var(--sub) 50%),linear-gradient(135deg,var(--sub) 50%,transparent 50%);
+    background-position:calc(100% - 18px) 21px,calc(100% - 13px) 21px;
+    background-size:5px 5px,5px 5px; background-repeat:no-repeat; padding-right:36px;
+  }
+  input:focus,select:focus{outline:2px solid var(--accent); border-color:transparent;}
+  .row{display:flex; gap:10px;}
+  .row>div{flex:1; min-width:0;}
+  .stepper{display:flex; align-items:center; gap:0; border:1px solid var(--border); border-radius:10px; overflow:hidden;}
+  .stepper button{
+    flex:0 0 44px; width:44px; height:46px; border:none; background:var(--input-bg); color:var(--accent);
+    font-size:24px; font-weight:600; cursor:pointer;
+  }
+  .stepper input{border:none; border-radius:0; text-align:center; flex:1 1 auto; min-width:0; padding:12px 2px;}
+
+  /* receipts */
+  .item{border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:10px; background:var(--bg);}
+  .item .row>div{flex:1;}
+  .item .row>div.catcol{flex:1.3;}
+  .item input,.item select{font-size:16px; padding:10px; min-height:42px;}
+  .item select{background-position:calc(100% - 16px) 19px,calc(100% - 11px) 19px;}
+  .item-tools{display:flex; align-items:center; gap:7px; margin-top:9px;}
+  .item-tools .mini{
+    border:1px solid var(--border); background:var(--card); color:var(--text);
+    border-radius:9px; padding:7px 10px; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .item-tools .mini.del{border-color:transparent; background:none; color:var(--red); margin-left:auto; padding:7px 4px;}
+  .thumb-wrap{position:relative; flex:0 0 auto;}
+  .item-thumb{width:40px; height:40px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer; display:block;}
+  .thumb-x{
+    position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:10px;
+    border:none; background:var(--red); color:#fff; font-size:12px; line-height:20px; padding:0; cursor:pointer;
+  }
+  button.photo-add{
+    width:100%; padding:12px; font-size:15px; font-weight:600; border-radius:10px;
+    border:1px dashed var(--accent); background:none; color:var(--accent); cursor:pointer; min-height:46px;
+  }
+
+  /* calculation panel */
+  .result{background:var(--accent-soft); border-radius:12px; padding:14px; margin-top:16px;}
+  .result .line{display:flex; justify-content:space-between; gap:12px; font-size:14px; color:var(--sub); padding:3px 0;}
+  .result .line b{color:var(--text); font-weight:600; font-variant-numeric:tabular-nums;}
+  .result .rule{height:1px; background:var(--border); margin:9px 0;}
+  .result .each{font-size:30px; font-weight:700; letter-spacing:-0.5px; font-variant-numeric:tabular-nums; text-align:center; margin-top:4px;}
+  .result .each small{font-size:16px; font-weight:600; color:var(--sub);}
+  .result .cadline{font-size:16px; color:var(--sub); margin-top:2px; font-variant-numeric:tabular-nums; text-align:center;}
+  .result .fx{font-size:11.5px; color:var(--sub); margin-top:10px; text-align:center;}
+
+  .btnrow{display:flex; gap:10px; margin-top:14px;}
+  button.primary,button.secondary{
+    flex:1; padding:14px; font-size:16px; font-weight:600; border-radius:12px;
+    border:none; cursor:pointer; min-height:50px;
+  }
+  button.primary{background:var(--accent); color:#fff;}
+  button.secondary{background:var(--accent-soft); color:var(--accent);}
+  button.danger-link{background:none; border:none; color:var(--red); font-size:15px; font-weight:600; padding:12px; width:100%; cursor:pointer;}
+  #cancelEditBtn{display:none; background:none; border:none; color:var(--sub); font-size:15px; padding:12px; width:100%; cursor:pointer;}
+
+  /* history */
+  .tx-wrap{background:var(--card); border-radius:14px; padding:14px 16px; margin-bottom:10px;}
+  .tx{display:flex; justify-content:space-between; align-items:center; gap:10px;}
+  .tx .info{min-width:0;}
+  .tx .desc{font-weight:600; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .tx .meta{font-size:13px; color:var(--sub); margin-top:2px;}
+  .tx .amts{text-align:right; flex-shrink:0;}
+  .tx .php{font-weight:700; font-variant-numeric:tabular-nums;}
+  .tx .cad{font-size:13px; color:var(--sub); font-variant-numeric:tabular-nums;}
+  .tx .each-sm{font-size:12px; color:var(--green); font-weight:600;}
+  .chips{display:flex; flex-wrap:wrap; gap:5px; margin-top:9px;}
+  .chip{font-size:11.5px; padding:3px 9px; border-radius:20px; background:var(--accent-soft); color:var(--accent); white-space:nowrap; font-weight:600;}
+  .thumbs{display:flex; gap:6px; margin-top:9px; flex-wrap:wrap;}
+  .tx-thumb{width:52px; height:52px; object-fit:cover; border-radius:8px; border:1px solid var(--border); flex-shrink:0; cursor:pointer;}
+  .details{display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border);}
+  .details.open{display:block;}
+  .details .line{display:flex; justify-content:space-between; gap:12px; font-size:14px; color:var(--sub); padding:3px 0;}
+  .details .line b{color:var(--text); font-weight:600; font-variant-numeric:tabular-nums;}
+  .details .rule{height:1px; background:var(--border); margin:8px 0;}
+  .tx-actions{display:flex; gap:8px; margin-top:10px;}
+  .tx-actions button{flex:1; padding:8px; font-size:14px; font-weight:600; border-radius:8px; border:none; cursor:pointer;}
+  .edit-btn,.share-btn,.det-btn{background:var(--accent-soft); color:var(--accent);}
+  .del-btn{background:rgba(215,0,21,.1); color:var(--red);}
+  .empty{color:var(--sub); text-align:center; padding:40px 20px; font-size:15px;}
+
+  /* summary */
+  .sum-section h2{font-size:15px; color:var(--sub); margin:18px 4px 8px; text-transform:uppercase; letter-spacing:.5px; font-weight:600;}
+  table.sum{width:100%; border-collapse:collapse; background:var(--card); border-radius:14px; overflow:hidden;}
+  table.sum th,table.sum td{padding:12px 14px; text-align:right; font-size:15px; font-variant-numeric:tabular-nums;}
+  table.sum th{font-size:12px; color:var(--sub); text-transform:uppercase; letter-spacing:.4px; border-bottom:1px solid var(--border);}
+  table.sum td:first-child,table.sum th:first-child{text-align:left; font-weight:600;}
+  table.sum tr+tr td{border-top:1px solid var(--border);}
+  table.sum td .msub{display:block; font-size:11.5px; color:var(--sub); font-weight:400; margin-top:2px;}
+  .catrow{margin-bottom:12px;}
+  .catrow:last-child{margin-bottom:0;}
+  .catlabel{display:flex; justify-content:space-between; gap:10px; font-size:14px; margin-bottom:6px;}
+  .catlabel .cv{color:var(--sub); font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .cattrack{height:8px; border-radius:4px; background:var(--track); overflow:hidden;}
+  .catbar{height:8px; border-radius:4px; background:var(--bar); min-width:4px;}
+  .catman{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:15px;}
+  .catman:last-child{border-bottom:none;}
+  .catman span.n{flex:1;}
+  .catman .bi{border:none; background:none; color:var(--red); font-size:13px; font-weight:600; cursor:pointer; padding:4px;}
+  .catman .built{color:var(--sub); font-size:12px;}
+
+  /* tabs */
+  nav{
+    position:fixed; bottom:0; left:0; right:0; display:flex;
+    background:var(--card); border-top:1px solid var(--border);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav button{
+    flex:1; background:none; border:none; padding:10px 0 8px; cursor:pointer;
+    color:var(--sub); font-size:11px; font-weight:600;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  nav button.active{color:var(--accent);}
+  nav button svg{width:26px; height:26px;}
+  .page{display:none;}
+  .page.active{display:block;}
+  .toast{
+    position:fixed; bottom:calc(96px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%);
+    background:var(--text); color:var(--bg); padding:10px 18px; border-radius:20px;
+    font-size:14px; font-weight:600; opacity:0; transition:opacity .25s; pointer-events:none; z-index:99;
+    white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis;
+  }
+  .toast.show{opacity:1;}
+  .note{font-size:12px; color:var(--sub); text-align:center; margin-top:10px;}
+
+  /* modals */
+  .modal{display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:150; overflow:auto; -webkit-overflow-scrolling:touch;}
+  .modal .card{max-width:480px; margin:40px auto; margin-top:calc(30px + env(safe-area-inset-top));}
+  .modal h2{font-size:20px; margin:0 0 6px;}
+  textarea{
+    width:100%; font-size:13px; font-family:ui-monospace,Menlo,monospace; padding:10px;
+    border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text);
+  }
+  pre.msg{
+    background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px;
+    font:12.5px/1.55 ui-monospace,Menlo,monospace; white-space:pre-wrap; word-break:break-word;
+    max-height:36vh; overflow:auto; margin:0;
+  }
+  .check{display:flex; align-items:center; gap:10px; padding:11px 2px; font-size:15px; cursor:pointer;}
+  .check input{width:22px; height:22px; min-height:0; flex:0 0 auto; accent-color:var(--accent);}
+  .warnbox{
+    font-size:12.5px; line-height:1.5; color:var(--text); background:var(--accent-soft);
+    border-radius:10px; padding:10px 12px; margin-top:10px;
+  }
+  #photoViewer{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:200;
+    align-items:center; justify-content:center; flex-direction:column; gap:14px;
+    padding:20px; padding-top:calc(20px + env(safe-area-inset-top));
+  }
+  #photoViewer img{max-width:100%; max-height:80vh; border-radius:10px;}
+  #photoViewer button{background:rgba(255,255,255,.15); color:#fff; border:none; border-radius:20px; padding:10px 24px; font-size:15px; font-weight:600; cursor:pointer;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="pageTitle">Fairpot</h1>
+  <div id="rateBadge">₱1 = <b id="rateVal">…</b> CAD<br><span id="rateSrc">loading rate…</span><br><a id="rateCredit" href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a></div>
+</header>
+
+<main>
+  <!-- NEW / EDIT EXPENSE -->
+  <section id="page-new" class="page active">
+    <div class="card">
+      <label for="desc">Description</label>
+      <input type="text" id="desc" placeholder="e.g. Dinner at Jollibee" autocomplete="off">
+
+      <div class="row">
+        <div>
+          <label for="date">Date</label>
+          <input type="date" id="date">
+        </div>
+        <div>
+          <label for="parties">People splitting</label>
+          <div class="stepper">
+            <button type="button" onclick="stepParties(-1)" aria-label="fewer people">−</button>
+            <input type="number" id="parties" inputmode="numeric" value="2" min="1" step="1">
+            <button type="button" onclick="stepParties(1)" aria-label="more people">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label style="margin-top:0;">Receipts</label>
+      <div id="itemsList"></div>
+      <button class="photo-add" type="button" onclick="addItem()">+ Add another receipt</button>
+
+      <div class="result" id="resultBox"></div>
+
+      <div class="btnrow">
+        <button class="secondary" type="button" onclick="shareCurrent()">Share</button>
+        <button class="primary" id="saveBtn" type="button" onclick="saveTx()">Save</button>
+      </div>
+      <button id="cancelEditBtn" type="button" onclick="cancelEdit()">Cancel editing</button>
+    </div>
+    <p class="note" id="storageNote"></p>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="page-history" class="page">
+    <div id="txList"></div>
+  </section>
+
+  <!-- SUMMARY -->
+  <section id="page-summary" class="page">
+    <div id="summaryContent"></div>
+
+    <div class="card" style="margin-top:14px;">
+      <label style="margin-top:0;">Where people can pay you</label>
+      <p class="note" style="text-align:left; margin:4px 0 12px;">
+        Offered every time you share a split — e-Transfer for Canadian dollars, GCash for pesos.
+        Kept only on this device and in your backup file.
+      </p>
+      <label for="payName">Your name (optional)</label>
+      <input type="text" id="payName" placeholder="Willy" autocomplete="off">
+      <label for="payEtransfer">Interac e-Transfer email — for C$</label>
+      <input type="email" id="payEtransfer" placeholder="you@example.com" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label for="payGcash">GCash number — for ₱</label>
+      <input type="tel" id="payGcash" placeholder="0917 123 4567" autocomplete="off">
+      <div class="btnrow">
+        <button class="primary" type="button" onclick="savePayDetails()">Save payment details</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <label style="margin-top:0;">Receipt categories</label>
+      <p class="note" style="text-align:left; margin:4px 0 12px;">
+        Shown alphabetically in the pull-down on every receipt. Add as many of your own as you like.
+      </p>
+      <div id="catManager"></div>
+      <div class="row" style="margin-top:12px;">
+        <div><input type="text" id="newCatInput" placeholder="New category" autocomplete="off"></div>
+        <div style="flex:0 0 96px;"><button class="primary" type="button" style="min-height:46px; padding:12px;" onclick="addCategoryFromInput()">Add</button></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <label style="margin-top:0;">Backup &amp; restore</label>
+      <p class="note" style="text-align:left; margin:4px 0 12px;">
+        Save your expense history (including receipt photos, categories and payment details) as a file
+        in your Files app, and load it back anytime — even on another device.
+      </p>
+      <div class="btnrow" style="margin-top:0;">
+        <button class="secondary" type="button" onclick="document.getElementById('restoreInput').click()">Load backup</button>
+        <button class="primary" type="button" onclick="exportBackup()">Save backup</button>
+      </div>
+      <input type="file" id="restoreInput" accept=".json,application/json" style="display:none">
+      <p class="note" id="versionNote" style="margin-top:12px;"></p>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button id="tab-new" class="active" onclick="showPage('new')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+    New
+  </button>
+  <button id="tab-history" onclick="showPage('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    History
+  </button>
+  <button id="tab-summary" onclick="showPage('summary')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>
+    Summary
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- hidden camera input, reused by every receipt row -->
+<input type="file" id="photoInput" accept="image/*" style="display:none">
+
+<!-- SHARE MODAL -->
+<div id="shareModal" class="modal">
+  <div class="card">
+    <h2>Share this split</h2>
+    <p class="note" style="text-align:left; margin:0 0 10px;">This is exactly what the other person will receive.</p>
+    <pre class="msg" id="sharePreview"></pre>
+    <label class="check" for="incPay"><input type="checkbox" id="incPay" checked onchange="refreshSharePreview()"> Include my payment details</label>
+    <label class="check" for="incPhoto" id="incPhotoRow" style="display:none;"><input type="checkbox" id="incPhoto"> Attach receipt photos</label>
+    <div id="payWarn"></div>
+    <div class="btnrow">
+      <button class="secondary" type="button" onclick="closeShareModal()">Cancel</button>
+      <button class="primary" type="button" onclick="doShare()">Share…</button>
+    </div>
+    <button class="secondary" type="button" style="width:100%; margin-top:10px;" onclick="copyShare()">Copy to clipboard</button>
+  </div>
+</div>
+
+<div id="photoViewer" onclick="closeViewer()">
+  <img id="viewerImg" alt="Receipt full size">
+  <button type="button">Close</button>
+</div>
+
+<script>
+'use strict';
+
+var APP_VERSION = '0.1.0';
+
+/* ---------- safe storage (falls back to memory if unavailable) ---------- */
+var memStore = {};
+var storageOK = false;
+try {
+  var _t = '_splitit_test';
+  window.localStorage.setItem(_t, '1');
+  window.localStorage.removeItem(_t);
+  storageOK = true;
+} catch (e) { storageOK = false; }
+
+function store(key, val){
+  if (val === undefined) { // read
+    if (storageOK) { try { return window.localStorage.getItem(key); } catch(e){ return memStore[key] || null; } }
+    return memStore.hasOwnProperty(key) ? memStore[key] : null;
+  }
+  if (storageOK) {
+    try { window.localStorage.setItem(key, val); return true; }
+    catch(e){ memStore[key] = val; return false; } // quota exceeded → memory only
+  }
+  memStore[key] = val;
+  return true;
+}
+
+/* ---------- exchange rate ---------- */
+var FALLBACK_RATE = 0.023024;              // PHP→CAD, captured 2026-07-16
+var FALLBACK_DATE = '2026-07-16';
+var rate = FALLBACK_RATE, rateInfo = 'built-in rate (' + FALLBACK_DATE + ')';
+
+(function initRate(){
+  var cached = store('splitit_rate');
+  if (cached) {
+    try {
+      var c = JSON.parse(cached);
+      if (c && c.rate > 0) { rate = c.rate; rateInfo = 'last known rate (' + c.date + ')'; }
+    } catch(e){}
+  }
+  renderRate();
+  fetch('https://open.er-api.com/v6/latest/PHP')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d && d.rates && d.rates.CAD > 0) {
+        rate = d.rates.CAD;
+        var today = new Date().toISOString().slice(0,10);
+        rateInfo = 'live rate · ' + today;
+        store('splitit_rate', JSON.stringify({rate: rate, date: today}));
+        renderRate(); recalc(); renderHistory(); renderSummary();
+      }
+    })
+    .catch(function(){ /* offline → keep cached/built-in */ renderRate(); });
+})();
+
+function renderRate(){
+  document.getElementById('rateVal').textContent = rate.toFixed(5);
+  document.getElementById('rateSrc').textContent = rateInfo;
+}
+
+/* ---------- helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function fmtPHP(n){ return '₱' + Number(n || 0).toLocaleString('en-PH',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtCAD(n){ return 'C$' + Number(n || 0).toLocaleString('en-CA',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg){
+  var t = $('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+function todayStr(){
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function uid(p){ return p + Date.now().toString(36) + Math.floor(Math.random()*100000).toString(36); }
+function pad(s, n){ s = String(s); while (s.length < n) s += ' '; return s; }
+
+/* ---------- categories ---------- */
+var DEFAULT_CATS = ['Beverages','Fees','Food','Gifts','Groceries','Lodging',
+                    'Other','Shopping','Tip','Transport','Utilities'];
+
+function sortCats(a){
+  return a.slice().sort(function(x, y){ return x.toLowerCase().localeCompare(y.toLowerCase()); });
+}
+function getCats(){
+  var raw = store('splitit_cats');
+  if (raw) {
+    try { var a = JSON.parse(raw); if (a && a.length) return sortCats(a); } catch(e){}
+  }
+  return sortCats(DEFAULT_CATS);
+}
+function saveCats(a){ store('splitit_cats', JSON.stringify(sortCats(a))); }
+
+function addCategory(name){
+  name = String(name || '').trim();
+  if (!name) return null;
+  if (name.length > 24) name = name.slice(0, 24);
+  var cats = getCats(), i;
+  for (i = 0; i < cats.length; i++) if (cats[i].toLowerCase() === name.toLowerCase()) return cats[i];
+  cats.push(name);
+  saveCats(cats);
+  return name;
+}
+function removeCategory(name){
+  var cats = getCats(), out = [], i;
+  for (i = 0; i < cats.length; i++) if (cats[i] !== name) out.push(cats[i]);
+  if (!out.length) return;
+  saveCats(out);
+  renderCatManager(); renderItems();
+}
+function addCategoryFromInput(){
+  var el = $('newCatInput');
+  var added = addCategory(el.value);
+  if (!added) { toast('Type a category name first'); return; }
+  el.value = '';
+  renderCatManager(); renderItems();
+  toast('Added “' + added + '”');
+}
+function catOptions(selected){
+  var cats = getCats(), out = '', i;
+  if (selected && cats.indexOf(selected) === -1) cats = sortCats(cats.concat([selected]));
+  for (i = 0; i < cats.length; i++) {
+    out += '<option value="' + esc(cats[i]) + '"' + (cats[i] === selected ? ' selected' : '') + '>' + esc(cats[i]) + '</option>';
+  }
+  return out + '<option value="__new__">+ Add category…</option>';
+}
+function renderCatManager(){
+  var cats = getCats(), h = '', i;
+  for (i = 0; i < cats.length; i++) {
+    var builtIn = DEFAULT_CATS.indexOf(cats[i]) !== -1;
+    h += '<div class="catman"><span class="n">' + esc(cats[i]) + '</span>' +
+      (builtIn ? '<span class="built">built in</span>'
+               : '<button class="bi" type="button" onclick="removeCategory(\'' + esc(cats[i]).replace(/'/g,"\\'") + '\')">Remove</button>') +
+      '</div>';
+  }
+  $('catManager').innerHTML = h;
+}
+
+/* ---------- receipt items (the working set on the New tab) ---------- */
+/* Every transaction owns items[]: { id, cat, amt, photo }.
+   The transaction total is always the sum of its receipts. */
+var items = [];
+var editingId = null;
+var photoTargetIndex = -1;
+
+var PHOTO_BUDGET = 220000;   // characters of one data URL
+var LADDER = [[1100, .60], [900, .50], [720, .42], [560, .34], [420, .27]];
+
+function blankItem(){ return { id: uid('it'), cat: 'Food', amt: '', photo: null }; }
+
+function addItem(){
+  items.push(blankItem());
+  renderItems(); recalc();
+}
+function removeItem(i){
+  items.splice(i, 1);
+  if (!items.length) items = [blankItem()];
+  renderItems(); recalc();
+}
+function setItemCat(i, val){
+  if (val === '__new__') {
+    var name = prompt('New category name');
+    var added = addCategory(name);
+    if (added) { items[i].cat = added; renderCatManager(); }
+    renderItems();
+  } else {
+    items[i].cat = val;
+  }
+  recalc();
+}
+function setItemAmt(i, val){
+  items[i].amt = val;
+  recalc();
+}
+function pickPhoto(i){
+  photoTargetIndex = i;
+  $('photoInput').click();
+}
+function clearItemPhoto(i){
+  items[i].photo = null;
+  renderItems(); recalc();
+}
+function viewItemPhoto(i){
+  if (items[i] && items[i].photo) showViewer(items[i].photo);
+}
+
+function renderItems(){
+  var h = '', i;
+  for (i = 0; i < items.length; i++) {
+    var it = items[i];
+    h += '<div class="item">' +
+      '<div class="row">' +
+        '<div class="catcol"><select aria-label="Category" onchange="setItemCat(' + i + ', this.value)">' + catOptions(it.cat) + '</select></div>' +
+        '<div><input type="number" inputmode="decimal" min="0" step="0.01" placeholder="₱ 0.00" aria-label="Amount in pesos" ' +
+          'value="' + esc(it.amt) + '" oninput="setItemAmt(' + i + ', this.value)"></div>' +
+      '</div>' +
+      '<div class="item-tools">' +
+        (it.photo ? '<span class="thumb-wrap">' +
+                      '<img class="item-thumb" src="' + it.photo + '" alt="Receipt" onclick="viewItemPhoto(' + i + ')">' +
+                      '<button class="thumb-x" type="button" title="Remove photo" onclick="clearItemPhoto(' + i + ')">✕</button>' +
+                    '</span>' : '') +
+        '<button class="mini" type="button" onclick="pickPhoto(' + i + ')">📷 ' + (it.photo ? 'Change photo' : 'Add photo') + '</button>' +
+        (items.length > 1 ? '<button class="mini del" type="button" onclick="removeItem(' + i + ')">Delete receipt</button>' : '') +
+      '</div>' +
+    '</div>';
+  }
+  $('itemsList').innerHTML = h;
+}
+
+/* ---------- receipt photos ---------- */
+$('photoInput').addEventListener('change', function(){
+  var f = this.files && this.files[0];
+  this.value = '';
+  if (!f || photoTargetIndex < 0) return;
+  compressImage(f, function(dataURL){
+    if (!dataURL) { toast('Could not read that photo'); return; }
+    items[photoTargetIndex].photo = dataURL;
+    renderItems(); recalc();
+  });
+});
+
+function compressImage(file, cb){
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+  img.onload = function(){
+    try {
+      var out = null;
+      for (var i = 0; i < LADDER.length; i++) {
+        var MAX = LADDER[i][0], Q = LADDER[i][1];
+        var w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          var s = MAX / Math.max(w, h);
+          w = Math.round(w * s); h = Math.round(h * s);
+        }
+        var cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        out = cv.toDataURL('image/jpeg', Q);
+        if (out.length < PHOTO_BUDGET) break;
+      }
+      URL.revokeObjectURL(url);
+      cb(out);
+    } catch(e){ URL.revokeObjectURL(url); cb(null); }
+  };
+  img.onerror = function(){ URL.revokeObjectURL(url); cb(null); };
+  img.src = url;
+}
+
+function showViewer(src){
+  $('viewerImg').src = src;
+  $('photoViewer').style.display = 'flex';
+}
+function viewPhoto(txId, idx){
+  var list = loadTxs(), i;
+  for (i = 0; i < list.length; i++) {
+    if (list[i].id === txId && list[i].items[idx] && list[i].items[idx].photo) {
+      showViewer(list[i].items[idx].photo); return;
+    }
+  }
+}
+function closeViewer(){
+  $('photoViewer').style.display = 'none';
+  $('viewerImg').removeAttribute('src');
+}
+
+/* ---------- transactions ---------- */
+/* v4 records carried a typed amountPHP and one optional photo.
+   migrate() folds those into a single "Other" receipt so every record,
+   old or new, has the same shape. It is lossless and idempotent. */
+function migrate(t){
+  if (!t) return t;
+  if (!t.items || !t.items.length) {
+    t.items = [{ id: uid('it'), cat: 'Other', amt: Number(t.amountPHP) || 0, photo: t.photo || null }];
+  }
+  return t;
+}
+
+function loadTxs(){
+  var list;
+  try { list = JSON.parse(store('splitit_txs') || '[]'); } catch(e){ list = []; }
+  for (var i = 0; i < list.length; i++) list[i] = migrate(list[i]);
+  return list;
+}
+function saveTxs(list){
+  var ok = store('splitit_txs', JSON.stringify(list));
+  if (ok === false) toast('Storage is full — try deleting old photos');
+}
+function saveTxsLocal(list){ saveTxs(list); }
+
+function currentInput(){
+  var n = Math.max(1, parseInt($('parties').value, 10) || 1);
+  var clean = [], total = 0, i;
+  for (i = 0; i < items.length; i++) {
+    var amt = parseFloat(items[i].amt) || 0;
+    if (amt <= 0 && !items[i].photo) continue;
+    clean.push({ id: items[i].id, cat: items[i].cat, amt: amt, photo: items[i].photo || null });
+    total += amt;
+  }
+  return {
+    desc: ($('desc').value || '').trim(),
+    date: $('date').value || todayStr(),
+    items: clean,
+    amountPHP: total,
+    parties: n,
+    rate: rate,
+    amountCAD: total * rate,
+    eachPHP: total / n,
+    eachCAD: (total * rate) / n
+  };
+}
+
+function recalc(){
+  var c = currentInput(), h = '', i;
+  if (!c.items.length) {
+    h += '<div class="line"><span>No receipts entered yet</span><b>—</b></div>';
+  } else {
+    for (i = 0; i < c.items.length; i++) {
+      h += '<div class="line"><span>' + esc(c.items[i].cat) + (c.items[i].photo ? ' 📎' : '') +
+           '</span><b>' + fmtPHP(c.items[i].amt) + '</b></div>';
+    }
+  }
+  h += '<div class="rule"></div>';
+  h += '<div class="line"><span>Total of ' + c.items.length + ' receipt' + (c.items.length === 1 ? '' : 's') + '</span><b>' + fmtPHP(c.amountPHP) + '</b></div>';
+  h += '<div class="line"><span>Converted at ₱1 = ' + rate.toFixed(5) + '</span><b>' + fmtCAD(c.amountCAD) + '</b></div>';
+  h += '<div class="line"><span>Divided between</span><b>' + c.parties + ' ' + (c.parties === 1 ? 'person' : 'people') + '</b></div>';
+  h += '<div class="rule"></div>';
+  h += '<div class="each">' + fmtPHP(c.eachPHP) + ' <small>/ person</small></div>';
+  h += '<div class="cadline">≈ ' + fmtCAD(c.eachCAD) + ' / person</div>';
+  h += '<div class="fx">' + esc(rateInfo) + '</div>';
+  $('resultBox').innerHTML = h;
+}
+
+function stepParties(d){
+  var el = $('parties');
+  el.value = Math.max(1, (parseInt(el.value,10) || 1) + d);
+  recalc();
+}
+
+function saveTx(){
+  var c = currentInput();
+  if (!(c.amountPHP > 0)) { toast('Add a receipt with an amount first'); return; }
+  if (!c.desc) c.desc = 'Expense';
+  c.photo = null;                 // photos live on the receipts
+  c.updatedAt = Date.now();
+  var list = loadTxs(), i;
+  if (editingId) {
+    for (i = 0; i < list.length; i++) {
+      if (list[i].id === editingId) { c.id = editingId; list[i] = c; break; }
+    }
+    toast('Expense updated');
+  } else {
+    c.id = 'tx' + Date.now() + Math.floor(Math.random()*1000);
+    list.unshift(c);
+    toast('Expense saved');
+  }
+  saveTxs(list);
+  cancelEdit(true);
+  renderHistory(); renderSummary();
+}
+
+function editTx(id){
+  var list = loadTxs(), t = null, i;
+  for (i = 0; i < list.length; i++) if (list[i].id === id) { t = list[i]; break; }
+  if (!t) return;
+  editingId = id;
+  $('desc').value = t.desc;
+  $('date').value = t.date;
+  $('parties').value = t.parties;
+  items = [];
+  for (i = 0; i < t.items.length; i++) {
+    items.push({ id: t.items[i].id || uid('it'), cat: t.items[i].cat || 'Other',
+                 amt: String(t.items[i].amt || ''), photo: t.items[i].photo || null });
+  }
+  if (!items.length) items = [blankItem()];
+  $('saveBtn').textContent = 'Update';
+  $('cancelEditBtn').style.display = 'block';
+  renderItems(); recalc();
+  showPage('new');
+}
+
+function cancelEdit(keepQuiet){
+  editingId = null;
+  $('desc').value = '';
+  $('date').value = todayStr();
+  $('parties').value = 2;
+  items = [blankItem()];
+  $('saveBtn').textContent = 'Save';
+  $('cancelEditBtn').style.display = 'none';
+  renderItems(); recalc();
+}
+
+function deleteTx(id){
+  if (!confirm('Delete this expense?')) return;
+  saveTxs(loadTxs().filter(function(t){ return t.id !== id; }));
+  renderHistory(); renderSummary();
+  toast('Deleted');
+}
+
+function toggleDetails(id, btn){
+  var el = $('det-' + id);
+  if (!el) return;
+  var open = el.classList.toggle('open');
+  btn.textContent = open ? 'Hide' : 'Details';
+}
+
+/* ---------- payment details ---------- */
+function getPay(){
+  try { return JSON.parse(store('splitit_pay') || '{}') || {}; } catch(e){ return {}; }
+}
+function setPay(p){ store('splitit_pay', JSON.stringify(p)); }
+function hasPay(){ var p = getPay(); return !!(p.etransfer || p.gcash); }
+function savePayDetails(){
+  setPay({
+    name: ($('payName').value || '').trim(),
+    etransfer: ($('payEtransfer').value || '').trim(),
+    gcash: ($('payGcash').value || '').trim()
+  });
+  toast(hasPay() ? 'Payment details saved' : 'Payment details cleared');
+}
+function fillPayFields(){
+  var p = getPay();
+  $('payName').value = p.name || '';
+  $('payEtransfer').value = p.etransfer || '';
+  $('payGcash').value = p.gcash || '';
+}
+function payBlock(){
+  var p = getPay(), lines = [];
+  if (p.gcash)     lines.push('  GCash (₱):       ' + p.gcash);
+  if (p.etransfer) lines.push('  e-Transfer (C$): ' + p.etransfer);
+  if (!lines.length) return '';
+  return '\nSend your share to' + (p.name ? ' ' + p.name : '') + ':\n' + lines.join('\n');
+}
+
+/* ---------- sharing ---------- */
+function txMessage(c, includePay){
+  var L = [], i;
+  L.push(c.desc + ' — ' + c.date);
+  L.push('');
+  for (i = 0; i < c.items.length; i++) {
+    L.push('  ' + pad(c.items[i].cat, 14) + fmtPHP(c.items[i].amt));
+  }
+  L.push('  ' + pad('TOTAL', 14) + fmtPHP(c.amountPHP) + '  (≈ ' + fmtCAD(c.amountCAD) + ')');
+  L.push('');
+  L.push('Split ' + c.parties + ' way' + (c.parties > 1 ? 's' : '') + ': ' +
+         fmtPHP(c.eachPHP) + ' each  (≈ ' + fmtCAD(c.eachCAD) + ' each)');
+  if (includePay) { var pb = payBlock(); if (pb) L.push(pb); }
+  L.push('');
+  L.push('Rate: ₱1 = ' + Number(c.rate || rate).toFixed(5) + ' CAD');
+  return L.join('\n');
+}
+
+function dataURLtoFile(dataURL, name){
+  try {
+    var parts = dataURL.split(',');
+    var mime = parts[0].match(/:(.*?);/)[1];
+    var bin = atob(parts[1]);
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new File([arr], name, { type: mime });
+  } catch(e){ return null; }
+}
+
+function shareText(text, files){
+  if (navigator.share) {
+    var payload = { text: text };
+    if (files && files.length && navigator.canShare && navigator.canShare({ files: files })) payload.files = files;
+    navigator.share(payload).catch(function(){});
+  } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){ toast('Copied — paste it anywhere'); });
+  } else {
+    window.location.href = 'mailto:?body=' + encodeURIComponent(text);
+  }
+}
+
+var shareSubject = null;   // the record currently shown in the share modal
+
+function openShareModal(c){
+  shareSubject = c;
+  var photos = 0, i;
+  for (i = 0; i < c.items.length; i++) if (c.items[i].photo) photos++;
+  var row = $('incPhotoRow');
+  row.style.display = photos ? 'flex' : 'none';
+  if (photos) row.lastChild.nodeValue = ' Attach ' + photos + ' receipt photo' + (photos === 1 ? '' : 's');
+  $('incPhoto').checked = false;
+  $('incPay').checked = hasPay();
+  $('incPay').disabled = !hasPay();
+  $('payWarn').innerHTML = hasPay() ? '' :
+    '<div class="warnbox">No payment details saved yet. Add your e-Transfer email and GCash number ' +
+    'under <b>Summary → Where people can pay you</b> and they will be offered here every time.</div>';
+  refreshSharePreview();
+  $('shareModal').style.display = 'block';
+}
+function refreshSharePreview(){
+  if (shareSubject) $('sharePreview').textContent = txMessage(shareSubject, $('incPay').checked);
+}
+function closeShareModal(){
+  $('shareModal').style.display = 'none';
+  shareSubject = null;
+}
+function shareFiles(){
+  var files = [], i;
+  if (!$('incPhoto').checked || !shareSubject) return files;
+  for (i = 0; i < shareSubject.items.length; i++) {
+    if (!shareSubject.items[i].photo) continue;
+    var f = dataURLtoFile(shareSubject.items[i].photo,
+      String(shareSubject.items[i].cat || 'receipt').toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-' + (i+1) + '.jpg');
+    if (f) files.push(f);
+  }
+  return files;
+}
+function doShare(){
+  if (!shareSubject) return;
+  shareText(txMessage(shareSubject, $('incPay').checked), shareFiles());
+  closeShareModal();
+}
+function copyShare(){
+  if (!shareSubject) return;
+  var text = txMessage(shareSubject, $('incPay').checked);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){ toast('Copied — paste it anywhere'); closeShareModal(); });
+  } else {
+    window.location.href = 'mailto:?body=' + encodeURIComponent(text);
+  }
+}
+function shareCurrent(){
+  var c = currentInput();
+  if (!(c.amountPHP > 0)) { toast('Add a receipt with an amount first'); return; }
+  if (!c.desc) c.desc = 'Expense';
+  openShareModal(c);
+}
+function shareTx(id){
+  var list = loadTxs(), i;
+  for (i = 0; i < list.length; i++) if (list[i].id === id) { openShareModal(list[i]); return; }
+}
+
+/* ---------- history ---------- */
+function renderHistory(){
+  var list = loadTxs();
+  var el = $('txList');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty">No expenses yet.<br>Add one from the New tab.</div>';
+    return;
+  }
+  var h = '';
+  list.forEach(function(t){
+    var chips = '', thumbs = '', det = '', i;
+    for (i = 0; i < t.items.length; i++) {
+      var it = t.items[i];
+      chips += '<span class="chip">' + esc(it.cat) + ' · ' + fmtPHP(it.amt) + '</span>';
+      det += '<div class="line"><span>' + esc(it.cat) + '</span><b>' + fmtPHP(it.amt) + '</b></div>';
+      if (it.photo) thumbs += '<img class="tx-thumb" src="' + it.photo + '" alt="Receipt" onclick="viewPhoto(\'' + t.id + '\',' + i + ')">';
+    }
+    det += '<div class="rule"></div>';
+    det += '<div class="line"><span>Total</span><b>' + fmtPHP(t.amountPHP) + '</b></div>';
+    det += '<div class="line"><span>In Canadian dollars</span><b>' + fmtCAD(t.amountCAD) + '</b></div>';
+    det += '<div class="line"><span>Divided between</span><b>' + t.parties + ' ' + (t.parties === 1 ? 'person' : 'people') + '</b></div>';
+    det += '<div class="line"><span>Each person pays</span><b>' + fmtPHP(t.eachPHP) + '</b></div>';
+    det += '<div class="line"><span>Each person pays (C$)</span><b>' + fmtCAD(t.eachCAD) + '</b></div>';
+    det += '<div class="line"><span>Rate used</span><b>₱1 = ' + Number(t.rate || rate).toFixed(5) + '</b></div>';
+
+    h += '<div class="tx-wrap">' +
+      '<div class="tx"><div class="info">' +
+        '<div class="desc">' + esc(t.desc) + '</div>' +
+        '<div class="meta">' + t.date + ' · ' + t.parties + ' people · ' + t.items.length + ' receipt' + (t.items.length === 1 ? '' : 's') + '</div>' +
+      '</div><div class="amts">' +
+        '<div class="php">' + fmtPHP(t.amountPHP) + '</div>' +
+        '<div class="cad">≈ ' + fmtCAD(t.amountCAD) + '</div>' +
+        '<div class="each-sm">' + fmtPHP(t.eachPHP) + ' each</div>' +
+      '</div></div>' +
+      (chips ? '<div class="chips">' + chips + '</div>' : '') +
+      (thumbs ? '<div class="thumbs">' + thumbs + '</div>' : '') +
+      '<div class="details" id="det-' + t.id + '">' + det + '</div>' +
+      '<div class="tx-actions">' +
+        '<button class="det-btn" onclick="toggleDetails(\'' + t.id + '\', this)">Details</button>' +
+        '<button class="share-btn" onclick="shareTx(\'' + t.id + '\')">Share</button>' +
+        '<button class="edit-btn" onclick="editTx(\'' + t.id + '\')">Edit</button>' +
+        '<button class="del-btn" onclick="deleteTx(\'' + t.id + '\')">Delete</button>' +
+      '</div></div>';
+  });
+  el.innerHTML = h;
+}
+
+/* ---------- summary ---------- */
+var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function renderSummary(){
+  var list = loadTxs();
+  var el = $('summaryContent');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty">Nothing to summarize yet.</div>';
+    return;
+  }
+  var byMonth = {}, byYear = {}, catByMonth = {}, catByYear = {};
+  list.forEach(function(t){
+    var ym = (t.date || '').slice(0,7), y = (t.date || '').slice(0,4), i;
+    if (!y) return;
+    (byMonth[ym] = byMonth[ym] || {php:0, cad:0, n:0});
+    byMonth[ym].php += t.amountPHP; byMonth[ym].cad += t.amountCAD; byMonth[ym].n++;
+    (byYear[y] = byYear[y] || {php:0, cad:0, n:0});
+    byYear[y].php += t.amountPHP; byYear[y].cad += t.amountCAD; byYear[y].n++;
+    catByMonth[ym] = catByMonth[ym] || {};
+    catByYear[y] = catByYear[y] || {};
+    for (i = 0; i < t.items.length; i++) {
+      var c = t.items[i].cat || 'Other', a = Number(t.items[i].amt) || 0;
+      catByMonth[ym][c] = (catByMonth[ym][c] || 0) + a;
+      catByYear[y][c] = (catByYear[y][c] || 0) + a;
+    }
+  });
+
+  function ranked(obj){
+    var a = [], k;
+    for (k in obj) if (obj.hasOwnProperty(k)) a.push([k, obj[k]]);
+    a.sort(function(x, y){ return y[1] - x[1]; });
+    return a;
+  }
+  function bars(obj){
+    var a = ranked(obj), h = '', i;
+    if (!a.length) return '';
+    var max = a[0][1];
+    for (i = 0; i < a.length; i++) {
+      var pct = max > 0 ? Math.max(2, Math.round(a[i][1] / max * 100)) : 2;
+      h += '<div class="catrow">' +
+        '<div class="catlabel"><span>' + esc(a[i][0]) + '</span>' +
+          '<span class="cv">' + fmtPHP(a[i][1]) + ' · ' + fmtCAD(a[i][1] * rate) + '</span></div>' +
+        '<div class="cattrack"><div class="catbar" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+    }
+    return h;
+  }
+  function leadCats(obj){
+    var a = ranked(obj), parts = [], i;
+    for (i = 0; i < a.length && i < 3; i++) parts.push(esc(a[i][0]));
+    if (a.length > 3) parts.push('+' + (a.length - 3));
+    return parts.join(' · ');
+  }
+
+  var years = Object.keys(byYear).sort().reverse();
+  var thisYear = years[0];
+
+  var h = '';
+
+  /* by category — single series, one hue, sorted by magnitude */
+  h += '<div class="sum-section"><h2>' + thisYear + ' by category</h2>' +
+       '<div class="card">' + bars(catByYear[thisYear]) + '</div></div>';
+
+  /* by month */
+  var mk = Object.keys(byMonth).sort().reverse();
+  h += '<div class="sum-section"><h2>By month</h2><table class="sum">' +
+       '<tr><th>Period</th><th>#</th><th>PHP</th><th>CAD</th></tr>';
+  mk.forEach(function(k){
+    var v = byMonth[k];
+    h += '<tr><td>' + MONTHS[parseInt(k.slice(5,7),10)-1] + ' ' + k.slice(0,4) +
+         '<span class="msub">' + leadCats(catByMonth[k]) + '</span></td>' +
+         '<td>' + v.n + '</td><td>' + fmtPHP(v.php) + '</td><td>' + fmtCAD(v.cad) + '</td></tr>';
+  });
+  h += '</table></div>';
+
+  /* by year */
+  h += '<div class="sum-section"><h2>By year</h2><table class="sum">' +
+       '<tr><th>Period</th><th>#</th><th>PHP</th><th>CAD</th></tr>';
+  years.forEach(function(k){
+    var v = byYear[k];
+    h += '<tr><td>' + k + '<span class="msub">' + leadCats(catByYear[k]) + '</span></td>' +
+         '<td>' + v.n + '</td><td>' + fmtPHP(v.php) + '</td><td>' + fmtCAD(v.cad) + '</td></tr>';
+  });
+  h += '</table></div>';
+
+  el.innerHTML = h;
+}
+
+/* ---------- backup & restore ---------- */
+function exportBackup(){
+  var list = loadTxs();
+  if (!list.length) { toast('Nothing to back up yet'); return; }
+  var payload = JSON.stringify({
+    app: 'split-it', version: 2, exported: new Date().toISOString(),
+    txs: list, cats: getCats(), pay: getPay()
+  });
+  var blob = new Blob([payload], { type: 'application/json' });
+  var file = new File([blob], 'fairpot-backup.json', { type: 'application/json' });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    navigator.share({ files: [file] })
+      .then(function(){ toast('Backup shared — choose “Save to Files”'); })
+      .catch(function(){});
+  } else {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'fairpot-backup.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('Backup downloaded');
+  }
+}
+
+$('restoreInput').addEventListener('change', function(){
+  var f = this.files && this.files[0];
+  this.value = '';
+  if (!f) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    try {
+      var data = JSON.parse(reader.result);
+      var txs = (data && data.app === 'split-it' && Array.isArray(data.txs)) ? data.txs : null;
+      if (!txs) { toast('That doesn’t look like a Fairpot or Split It backup'); return; }
+      var existing = loadTxs();
+      if (existing.length && !confirm('Replace your current ' + existing.length + ' expense(s) with the ' + txs.length + ' from this backup?')) return;
+      for (var i = 0; i < txs.length; i++) txs[i] = migrate(txs[i]);
+      saveTxs(txs);
+      if (data.cats && data.cats.length) saveCats(data.cats);
+      if (data.pay) { setPay(data.pay); fillPayFields(); }
+      renderCatManager(); renderItems();
+      renderHistory(); renderSummary();
+      toast('Restored ' + txs.length + ' expense(s)');
+    } catch(e){ toast('Could not read that backup file'); }
+  };
+  reader.onerror = function(){ toast('Could not read that backup file'); };
+  reader.readAsText(f);
+});
+
+/* ---------- tabs ---------- */
+function showPage(name){
+  ['new','history','summary'].forEach(function(p){
+    $('page-' + p).classList.toggle('active', p === name);
+    $('tab-' + p).classList.toggle('active', p === name);
+  });
+  $('pageTitle').textContent =
+    name === 'new' ? 'Fairpot' : name === 'history' ? 'History' : 'Summary';
+  if (name === 'history') renderHistory();
+  if (name === 'summary') { renderSummary(); renderCatManager(); fillPayFields(); }
+  window.scrollTo(0, 0);
+}
+
+/* ---------- init ---------- */
+$('date').value = todayStr();
+$('parties').addEventListener('input', recalc);
+items = [blankItem()];
+renderItems();
+renderCatManager();
+fillPayFields();
+if (!storageOK) {
+  $('storageNote').textContent =
+    'Note: storage is unavailable right now, so history won’t survive closing the app.';
+}
+$('versionNote').textContent = 'Fairpot v' + APP_VERSION;
+recalc();
+renderHistory();
+renderSummary();
+
+</script>
+</body>
+</html>

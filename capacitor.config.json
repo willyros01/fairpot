@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.willyros01.fairpot",
+  "appName": "Fairpot",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never"
+  }
+}
