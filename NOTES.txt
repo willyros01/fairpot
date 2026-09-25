@@ -21,5 +21,91 @@ Version history
     Capacitor 8 project files, placeholder icon, iOS TestFlight workflow.
     Tested in a browser: save, history, summary, web backup restore, reload.
 
+  v0.2.0 (Sep 25, 2026) — Phase 2: multi-currency.
+    Currency per expense (searchable picker, recent currencies first).
+    Home currency setting, default CAD; totals and summaries in home currency.
+    Rates: one table a day from open.er-api.com; rate locked when saved;
+    editing keeps it unless the currency changes; tap the rate to type your own.
+    Warning when an expense is backdated (the free service only has today's rate).
+    Decimals per currency from the phone (JPY 0, most 2, KWD 3).
+    Payment methods: general list; old e-Transfer / GCash settings carry over.
+    Share message: original currency first, home currency in brackets, rate used.
+    Old Split It and v0.1.0 records load as pesos with their saved rates.
+    Tested in a browser with 19 checks: all passed, no page errors.
+
+  v0.2.1 (Sep 25, 2026) — storage safety fix.
+    Fairpot now keeps its data under its own names (fairpot_txs, fairpot_cats,
+    fairpot_pay). Before, it used Split It's names, and because both web apps live
+    on willyros01.github.io, the Safari test page could read and overwrite Split It's
+    browser data. Split It data now only comes in through Load backup.
+
+  v0.3.0 (Sep 25, 2026) — Phase 3: phone storage.
+    In the phone app, everything is saved to a data file in the app's private
+    folder, written as two alternating copies (A and B) with a sequence number, so a
+    crash mid-save always leaves the previous good copy. Newest valid copy wins at
+    start-up. No 5 MB limit; iOS does not clear it.
+    Receipt photos are separate image files (photos folder); records keep only
+    "file:photos/<name>.jpg". Unused photo files are swept at start-up, after
+    saving and after deleting.
+    Native share sheet (official Share plugin) for split messages, receipt photos
+    and backups. Backups embed photos, so they restore on any device.
+    Official plugins only: @capacitor/filesystem and @capacitor/share.
+    Camera: the photo button already opens iOS's own camera / photo library sheet,
+    so no Camera plugin is needed.
+    The Safari test page still uses browser storage (photos inside records).
+    Tested: the 20 browser checks, plus 14 checks with a simulated phone file system
+    (save, restart, corrupt copy, photos as files, share, backup, restore, delete).
+
+  v0.3.1 (Sep 25, 2026) — commit or roll back.
+    Every change goes through commit(): build the new data from the last committed
+    version, write it, read it back and compare, and only then make it current.
+    Any failure: nothing changes in memory or on storage (the unconfirmed copy is
+    deleted), a dialog says "… was NOT saved" with the reason, and the form keeps
+    what was typed. Commits run one at a time, in order.
+    Save, Update, Delete, Restore, categories, payment methods and home currency all
+    wait for the commit; "Saved" is shown only after it. Save button shows
+    "Saving…" and can't be tapped twice.
+    Restore is all-or-nothing: expenses, categories and payment methods in one
+    commit; if any photo can't be written, nothing is restored.
+    If saved data exists but can't be read at start-up (or the folder can't be
+    listed), the app shows a warning and refuses every save, so it can never
+    overwrite real data with an empty list.
+    Backup reminder under the New tab: after 30 days, or when there is no backup yet
+    and 5 or more expenses.
+    Tested: 20 browser checks, 13 phone-storage checks, 15 commit/rollback checks
+    (write failure, bad read-back, delete failure, payment failure, one damaged copy,
+    both damaged, unreadable folder). All pass, no page errors.
+
+  v0.4.0 (Sep 25, 2026) — SQLite, everything bundled for the one TestFlight pass.
+    Storage is SQLite (@capacitor-community/sqlite 8.1.x), replacing the v0.3 data
+    file. Tables: expenses, receipts (-> expenses ON DELETE CASCADE), photos
+    (thumbnail + full photo -> receipts ON DELETE CASCADE), categories, pay_methods,
+    settings. PRAGMA foreign_keys=ON, synchronous=FULL, quick_check at start-up.
+    Every change is ONE transaction (executeSet, transaction:true): commit or
+    rollback. The screens show a read copy rebuilt from the database after each
+    commit; nothing writes to it directly. Photos live in the database, so an expense,
+    its receipts and photos commit together — no files to keep in step.
+    Database fails its check or can't open -> warning, all saving refused.
+    Photos stored as base64 text (not BLOB) so they cross the app bridge reliably.
+    Share and backup use temporary files in the cache folder (Filesystem plugin).
+    Safari test page: same operations on one JSON snapshot in browser storage,
+    committed whole or not at all.
+    Phase 5 material: launch screen, privacy.html, STORE-LISTING.md, root index.html
+    so willyros01.github.io/fairpot/ opens the test page.
+    Build logic moved to build/ios-build.sh (visible); the workflow just runs it.
+    Encryption answer left to App Store Connect until confirmed (SQLCipher is bundled
+    by the SQLite component even though the database is not encrypted).
+    Tested: 20 browser checks + 28 checks against a real SQLite database through a
+    simulated plugin (schema, restart, thumbnails, full photo, share, rollback on a
+    failed statement, edit photo/receipt removal, cascade delete, categories, payment
+    methods, backup with photos, all-or-nothing restore, Split It import, integrity
+    failure). All pass, no page errors.
+
+Notes
+  The workflow file in the repo is named iOS-testflight.yml (capital iOS). It
+  works as is. It is NOT included in this zip, so it can't be duplicated.
+
 Next
-  Phase 2 — multi-currency + home-currency setting + payment methods list.
+  One TestFlight test pass once Apple approves the enrollment, then fixes,
+  screenshots, encryption answer, and App Store submission.
+  Android later (needs 12 testers for 14 days).

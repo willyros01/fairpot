@@ -1,136 +1,108 @@
-# Fairpot v0.1.0 — handover
+# Fairpot v0.4.0 — handover
 
-Fairpot is the public iOS app made from Split It v5.0. This package is **Phase 1** of the
-design ("Split It — Public App Design", v1.1): the web code with all Firebase and cloud
-sync removed, wrapped as a Capacitor 8 app, with a GitHub Actions workflow that builds
-the iOS app in the cloud and uploads it to TestFlight. No Xcode is needed on any of
-Willy's devices.
+Fairpot is the public iOS app made from Split It v5.0. v0.4.0 contains everything planned
+before testing: multi-currency, a real SQLite database with commit/rollback (photos included),
+native sharing and backups, launch screen, privacy policy and store listing text.
+
+The app is built in the cloud by GitHub Actions and delivered to TestFlight. No Xcode is
+needed on any of Willy's devices.
 
 ---
 
 ## IMPORTANT — do not touch the Split It repo
 
-- **willyros01/split** is Willy's live personal web app. **Do not change, overwrite or
-  upload anything to it.**
-- Fairpot goes into a **brand-new repo**: **willyros01/fairpot** (public — public repos
-  get unlimited free build minutes on GitHub's Mac machines, and the app holds no secrets).
+- **willyros01/split** is Willy's live personal web app. **Never change or upload to it.**
+- Fairpot lives only in **willyros01/fairpot** (public).
 
 ---
 
-## Step 1 — Create the repo and upload these files
+## Step 1 — Upload the files
 
-1. Create a new **public** repository **willyros01/fairpot**, default branch **main**.
-2. Upload every file from this zip to the **root** of the repo, keeping the folders exactly:
+Upload everything in this zip to the **root** of willyros01/fairpot (select all, drag onto
+"Add file → Upload files", commit). It replaces files with the same names:
 
 ```
-.github/workflows/ios-testflight.yml   <- hidden folder: make sure it is uploaded
-.gitignore                             <- hidden file: make sure it is uploaded
-capacitor.config.json
-package.json
-resources/icon.png
-www/index.html
-HANDOVER.md
-NOTES.txt
-README.md
+index.html              (opens the test page from willyros01.github.io/fairpot/)
+privacy.html            (the public privacy policy page)
+www/index.html          (the app)
+resources/icon.png, resources/splash.png
+build/ios-build.sh      (everything the iOS build does)
+build/github-workflow.yml
+package.json, capacitor.config.json
+HANDOVER.md, NOTES.txt, README.md, STORE-LISTING.md
 ```
 
-3. Do **not** add an ios/ or android/ folder. The workflow generates the iOS project
-   fresh on every build, on purpose.
+There are no hidden files in this zip.
 
-The first push starts the workflow, which will **skip itself** with a notice
-("Build skipped — the four Apple secrets are not set yet"). That is expected.
+## Step 2 — One-time: update the workflow
 
----
+The workflow file already in the repo is **.github/workflows/iOS-testflight.yml**. Replace its
+contents with **build/github-workflow.yml** once:
 
-## Step 2 — Apple: register the app's ID (after the developer enrollment is approved)
+1. On github.com open willyros01/fairpot → **build/github-workflow.yml** → select all the text
+   (or use the "Copy raw file" button) and copy it.
+2. Open **.github/workflows/iOS-testflight.yml** → pencil icon (**Edit**) → select all → paste
+   → **Commit changes**.
 
-At developer.apple.com → Account → **Certificates, Identifiers & Profiles** → **Identifiers** → **+**:
+After this, all future build changes happen in **build/ios-build.sh**, a normal visible file.
 
-- Type: **App IDs** → **App**
-- Description: **Fairpot**
-- Bundle ID: **Explicit** → **io.github.willyros01.fairpot**
-- Capabilities: leave the defaults. Register.
+## Step 3 — Apple: register the app's ID (after enrollment is approved)
 
-## Step 3 — Apple: create the app in App Store Connect
+developer.apple.com → Account → **Certificates, Identifiers & Profiles** → **Identifiers** → **+**
+→ App IDs → App → Description **Fairpot**, Bundle ID **Explicit**: **io.github.willyros01.fairpot**.
 
-appstoreconnect.apple.com → **Apps** → **+** → **New App**:
+## Step 4 — Apple: create the app in App Store Connect
 
-- Platform: **iOS**
-- Name: **Fairpot** (if taken, try **Fairpot – Split Expenses**)
-- Primary language: **English (Canada)**
-- Bundle ID: **io.github.willyros01.fairpot**
-- SKU: **fairpot**
-- User access: Full access
+appstoreconnect.apple.com → Apps → **+** → New App: iOS, name **Fairpot**
+(if taken: **Fairpot – Split Expenses**), English (Canada), bundle ID above, SKU **fairpot**.
 
-## Step 4 — Apple: create the API key the cloud build uses
+## Step 5 — Apple: API key, then the four GitHub secrets
 
-appstoreconnect.apple.com → **Users and Access** → **Integrations** → **App Store Connect API**
-→ **Team Keys** → **+**:
+App Store Connect → Users and Access → Integrations → App Store Connect API → Team Keys → **+**,
+access **Admin**. Download the .p8 (only once). Note the **Key ID** and **Issuer ID**.
+Team ID: developer.apple.com → Account → Membership details.
 
-- Name: **GitHub Fairpot build**
-- Access: **Admin** (needed so the build can create signing certificates automatically)
-- Download the **.p8** file — Apple only lets you download it **once**.
-- Note the **Key ID** (shown in the key's row) and the **Issuer ID** (shown above the list).
+willyros01/fairpot → Settings → Secrets and variables → Actions → New repository secret:
 
-Team ID: developer.apple.com → **Account** → **Membership details** → **Team ID**.
+| Secret | Value |
+|---|---|
+| ASC_KEY_ID | the Key ID |
+| ASC_ISSUER_ID | the Issuer ID |
+| ASC_KEY_P8 | the whole text of the .p8 file, including BEGIN and END lines |
+| APPLE_TEAM_ID | the Team ID |
 
-## Step 5 — Add the four secrets to the GitHub repo
+## Step 6 — Run the build
 
-willyros01/fairpot → **Settings** → **Secrets and variables** → **Actions** →
-**New repository secret**, four times:
+Repo → **Actions** → **iOS build to TestFlight** → **Run workflow**. About 20–30 minutes, then
+5–30 minutes of Apple processing. Every later push that changes the app builds automatically.
 
-| Secret name     | Value                                                                 |
-|-----------------|-----------------------------------------------------------------------|
-| ASC_KEY_ID      | the Key ID from step 4                                                |
-| ASC_ISSUER_ID   | the Issuer ID from step 4                                             |
-| ASC_KEY_P8      | the **whole text** of the .p8 file, including the BEGIN and END lines |
-| APPLE_TEAM_ID   | the Team ID                                                           |
+## Step 7 — TestFlight
 
-Never commit the .p8 file to the repo (the .gitignore blocks it).
-
-## Step 6 — Run the first build
-
-Repo → **Actions** → **iOS build to TestFlight** → **Run workflow** (branch main).
-It takes about 15–25 minutes. When it finishes, Apple processes the build for another
-5–30 minutes, then it appears in App Store Connect → **TestFlight**.
-
-After this, **every push to main** that changes the app builds and uploads automatically.
-
-## Step 7 — Install on the iPad
-
-1. App Store Connect → TestFlight → **Internal Testing** → create a group → add Willy's
-   Apple account as a tester → add the build.
-2. On the iPad (and iPhone), install **TestFlight** from the App Store, accept the invite,
-   tap **Install**. New builds then show up in TestFlight with an **Update** button.
+1. App Store Connect → TestFlight → the build shows **Missing Compliance** → **Manage** → answer
+   the encryption questions (see STORE-LISTING.md; Claude will help with the exact answers).
+2. Internal Testing → create a group, add Willy's Apple account, turn on automatic distribution.
+3. Install **TestFlight** on the iPad and iPhone, accept the invite, **Install**.
 
 ---
 
 ## If the build fails
 
-| Message contains                                   | Fix                                                                       |
-|----------------------------------------------------|---------------------------------------------------------------------------|
-| runner label / "macos-26" not found                | In the workflow, change runs-on to **macos-15**                           |
-| "No Account for Team" / "not authorized" / signing | API key must have **Admin** access; check APPLE_TEAM_ID                  |
-| "No suitable application records were found"       | Do step 3 (create the app in App Store Connect) with the exact bundle ID |
-| "bundle version must be higher"                    | Just run the workflow again — the build number rises every run           |
-| Capacitor needs a newer Xcode                      | The workflow already selects the newest Xcode; use a newer macOS runner   |
+| Message contains | Fix |
+|---|---|
+| runner label / "macos-26" not found | In the workflow, change runs-on to **macos-15** |
+| "No Account for Team" / not authorized / signing | API key must have **Admin** access; check APPLE_TEAM_ID |
+| "No suitable application records were found" | Do step 4 with the exact bundle ID |
+| "bundle version must be higher" | Run the workflow again |
+| anything about CapacitorSQLite / SQLCipher / packages | Send Claude the log (or a screenshot) |
 
 ---
 
-## What Phase 1 does and does not do yet
+## What to test on the phone (one pass)
 
-**Done:** Firebase scripts, cloud-sync card, sync window, sync code and service worker removed;
-app renamed Fairpot; pinch-zoom allowed; the required "Rates By Exchange Rate API" credit link
-added; the Firestore 1 MB photo-size checks removed; web-app (Split It) backups still load;
-simple placeholder icon; camera and photo-library permission text; encryption answered
-("standard HTTPS only") so TestFlight doesn't ask each upload.
-
-**Not yet (later phases of the design):**
-- Phase 2 — multi-currency with a home-currency setting (default C$) and a general
-  payment-methods list. Still pesos to C$ only for now.
-- Phase 3 — SQLite storage and receipt photos as files, native camera and share plugins.
-  For now data is still in the app's browser storage, so **back up regularly**, and
-  Share / Save backup may fall back to "copy to clipboard" inside the app.
-- Phase 4 — new backup format (web backups already import).
-- Phase 5 — final icon, launch screen, Apple privacy manifest, privacy policy page,
-  store listing and screenshots, Android build (deferred until testers are lined up).
+1. Add expenses in two or three currencies, with and without receipt photos. Close the app fully
+   (swipe it away) and reopen — everything must still be there.
+2. Edit an expense: change a photo, remove a receipt line. Delete an expense.
+3. Share a split with photos to Messages; save a backup to Files; load it back.
+4. Load your Split It web-app backup (Summary → Load backup).
+5. Summary: change home currency, add a payment method and a category.
+6. Turn on Airplane Mode and add an expense (rates fall back to the last download).

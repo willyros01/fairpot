@@ -4,5 +4,12 @@
   "webDir": "www",
   "ios": {
     "contentInset": "never"
+  },
+  "plugins": {
+    "CapacitorSQLite": {
+      "iosDatabaseLocation": "Library/CapacitorDatabase",
+      "iosIsEncryption": false,
+      "androidIsEncryption": false
+    }
   }
 }

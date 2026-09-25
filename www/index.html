@@ -199,13 +199,46 @@
   }
   #photoViewer img{max-width:100%; max-height:80vh; border-radius:10px;}
   #photoViewer button{background:rgba(255,255,255,.15); color:#fff; border:none; border-radius:20px; padding:10px 24px; font-size:15px; font-weight:600; cursor:pointer;}
+
+  /* ---------- v0.2.0: currencies, rates, payment methods ---------- */
+  #rateBadge{cursor:pointer;}
+  button.curbtn{
+    width:100%; min-height:46px; padding:12px 36px 12px 12px; border-radius:10px; text-align:left;
+    border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-size:17px;
+    cursor:pointer; position:relative;
+  }
+  button.curbtn::after{content:'▾'; position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--sub);}
+  button.curbtn .code{font-weight:700; margin-right:6px;}
+  .result .line.tap{cursor:pointer;}
+  .result .line.tap b{color:var(--accent); text-decoration:underline; text-underline-offset:3px;}
+  .result .warnline{font-size:13px; line-height:1.45; color:var(--text); background:rgba(255,159,10,.18);
+    border-radius:8px; padding:8px 10px; margin:6px 0;}
+  #curSearch{margin-bottom:10px;}
+  #curList{max-height:52vh; overflow:auto; -webkit-overflow-scrolling:touch; border-top:1px solid var(--border);}
+  #curList button{display:flex; gap:10px; width:100%; text-align:left; background:none; border:none;
+    border-bottom:1px solid var(--border); color:var(--text); padding:13px 4px; font-size:16px; cursor:pointer;}
+  #curList button .code{font-weight:700; min-width:48px;}
+  #curList button.sel{color:var(--accent);}
+  #curList .grp{font-size:12px; color:var(--sub); text-transform:uppercase; letter-spacing:.4px; padding:12px 4px 4px; font-weight:600;}
+  .paym{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); font-size:15px;}
+  .paym:last-child{border-bottom:none;}
+  .paym .pl{flex:1; min-width:0;}
+  .paym .pl b{display:block;}
+  .paym .pl span{color:var(--sub); word-break:break-all;}
+  .paym .bi{border:none; background:none; color:var(--red); font-size:13px; font-weight:600; cursor:pointer; padding:4px;}
+  .homeline{display:flex; align-items:center; gap:12px;}
+  .homeline .hv{flex:1; font-size:17px;}
+  .homeline .hv b{margin-right:6px;}
 </style>
 </head>
 <body>
 
 <header>
   <h1 id="pageTitle">Fairpot</h1>
-  <div id="rateBadge">₱1 = <b id="rateVal">…</b> CAD<br><span id="rateSrc">loading rate…</span><br><a id="rateCredit" href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a></div>
+  <div id="rateBadge" onclick="setManualRate()" title="Tap to enter your own rate">
+    <span id="rateTop">…</span><br><span id="rateSrc">loading rates…</span><br>
+    <a id="rateCredit" href="https://www.exchangerate-api.com" target="_blank" rel="noopener" onclick="event.stopPropagation()">Rates By Exchange Rate API</a>
+  </div>
 </header>
 
 <main>
@@ -229,6 +262,9 @@
           </div>
         </div>
       </div>
+
+      <label>Currency of this expense</label>
+      <button type="button" class="curbtn" id="curBtn" onclick="openCurPicker('entry')"></button>
     </div>
 
     <div class="card">
@@ -257,19 +293,35 @@
     <div id="summaryContent"></div>
 
     <div class="card" style="margin-top:14px;">
+      <label style="margin-top:0;">Home currency</label>
+      <p class="note" style="text-align:left; margin:4px 0 12px;">
+        Every total, summary and share message is also shown in this currency.
+      </p>
+      <div class="homeline">
+        <div class="hv" id="homeVal"></div>
+        <div style="flex:0 0 110px;"><button class="secondary" type="button" style="width:100%; margin:0;" onclick="openCurPicker('home')">Change</button></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
       <label style="margin-top:0;">Where people can pay you</label>
       <p class="note" style="text-align:left; margin:4px 0 12px;">
-        Offered every time you share a split — e-Transfer for Canadian dollars, GCash for pesos.
+        Offered every time you share a split. Add as many ways to pay as you like.
         Kept only on this device and in your backup file.
       </p>
       <label for="payName">Your name (optional)</label>
-      <input type="text" id="payName" placeholder="Willy" autocomplete="off">
-      <label for="payEtransfer">Interac e-Transfer email — for C$</label>
-      <input type="email" id="payEtransfer" placeholder="you@example.com" autocomplete="off" autocapitalize="off" spellcheck="false">
-      <label for="payGcash">GCash number — for ₱</label>
-      <input type="tel" id="payGcash" placeholder="0917 123 4567" autocomplete="off">
+      <input type="text" id="payName" placeholder="Your name" autocomplete="off" onchange="savePayName()">
+      <label>Payment methods</label>
+      <div id="payList"></div>
+      <label for="payLabel">Add a method</label>
+      <input type="text" id="payLabel" list="payLabels" placeholder="e.g. Interac e-Transfer, GCash, PayPal" autocomplete="off">
+      <input type="text" id="payValue" placeholder="Email, phone number or account" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:8px;">
+      <datalist id="payLabels">
+        <option value="Interac e-Transfer"><option value="GCash"><option value="Maya"><option value="PayPal">
+        <option value="Wise"><option value="Revolut"><option value="Venmo"><option value="Zelle"><option value="Bank transfer">
+      </datalist>
       <div class="btnrow">
-        <button class="primary" type="button" onclick="savePayDetails()">Save payment details</button>
+        <button class="primary" type="button" onclick="addPayMethod()">Add payment method</button>
       </div>
     </div>
 
@@ -289,7 +341,7 @@
       <label style="margin-top:0;">Backup &amp; restore</label>
       <p class="note" style="text-align:left; margin:4px 0 12px;">
         Save your expense history (including receipt photos, categories and payment details) as a file
-        in your Files app, and load it back anytime — even on another device.
+        in your Files app, and load it back anytime — even on another device. Split It backups load too.
       </p>
       <div class="btnrow" style="margin-top:0;">
         <button class="secondary" type="button" onclick="document.getElementById('restoreInput').click()">Load backup</button>
@@ -338,6 +390,16 @@
   </div>
 </div>
 
+<!-- CURRENCY PICKER -->
+<div id="curModal" class="modal">
+  <div class="card">
+    <h2 id="curTitle">Choose a currency</h2>
+    <input type="text" id="curSearch" placeholder="Search by code or name" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="renderCurList()">
+    <div id="curList"></div>
+    <button class="secondary" type="button" style="width:100%; margin-top:12px;" onclick="closeCurPicker()">Cancel</button>
+  </div>
+</div>
+
 <div id="photoViewer" onclick="closeViewer()">
   <img id="viewerImg" alt="Receipt full size">
   <button type="button">Close</button>
@@ -346,68 +408,381 @@
 <script>
 'use strict';
 
-var APP_VERSION = '0.1.0';
+var APP_VERSION = '0.4.0';
 
-/* ---------- safe storage (falls back to memory if unavailable) ---------- */
-var memStore = {};
-var storageOK = false;
-try {
-  var _t = '_splitit_test';
-  window.localStorage.setItem(_t, '1');
-  window.localStorage.removeItem(_t);
-  storageOK = true;
-} catch (e) { storageOK = false; }
+/* ======================================================================
+   STORAGE — SQLite on the phone, one transaction per change
+   ======================================================================
+   The database is the only source of truth. The screens show a read copy
+   (cache) that is rebuilt FROM THE DATABASE after every successful commit;
+   nothing is ever written to that copy directly.
 
-function store(key, val){
-  if (val === undefined) { // read
-    if (storageOK) { try { return window.localStorage.getItem(key); } catch(e){ return memStore[key] || null; } }
-    return memStore.hasOwnProperty(key) ? memStore[key] : null;
-  }
-  if (storageOK) {
-    try { window.localStorage.setItem(key, val); return true; }
-    catch(e){ memStore[key] = val; return false; } // quota exceeded → memory only
-  }
-  memStore[key] = val;
-  return true;
+   Every change is a list of operations committed in ONE SQLite transaction
+   (executeSet with transaction:true): BEGIN … COMMIT, or ROLLBACK if any
+   statement fails. Only after COMMIT returns does the app say "Saved".
+   On failure nothing changes and a dialog says what was NOT saved.
+
+   Tables
+     expenses   one row per expense
+     receipts   its receipt lines            → expenses  ON DELETE CASCADE
+     photos     thumbnail + full photo       → receipts  ON DELETE CASCADE
+     categories, pay_methods, settings
+
+   Phone app: @capacitor-community/sqlite (plain, unencrypted database in
+   Library/CapacitorDatabase, included in the iPhone's iCloud Backup).
+   Web browser (the Safari test page): the same operations applied to one
+   JSON snapshot in localStorage, written whole or not at all. */
+
+var CapNS = window.Capacitor || null;
+var isNative = !!(CapNS && CapNS.isNativePlatform && CapNS.isNativePlatform());
+var SQL = isNative && CapNS.Plugins ? CapNS.Plugins.CapacitorSQLite : null;
+var FS = isNative && CapNS.Plugins ? CapNS.Plugins.Filesystem : null;
+var ShareP = isNative && CapNS.Plugins ? CapNS.Plugins.Share : null;
+var DBNAME = 'fairpot';
+var SCHEMA_VERSION = 1;
+
+var cache = { txs: [], cats: [], pay: { name: '', methods: [] }, settings: {} };
+var storageBlocked = '';           // non-empty: the database could not be opened safely; saving is refused
+var storageOK = true;              // web only: false when the browser refuses storage
+var commitChain = Promise.resolve();
+
+/* ---------- reading the committed data ---------- */
+function store(key){ return cache.settings.hasOwnProperty(key) ? cache.settings[key] : null; }
+function loadTxs(){ return JSON.parse(JSON.stringify(cache.txs)); }
+
+/* ---------- operations (what a commit is made of) ---------- */
+function opSetting(key, value){ return { op: 'setting', key: key, value: value }; }
+/* photos: { receiptId: {thumb, full} to store, or null to remove } — receipts not listed keep theirs */
+function opSaveExpense(tx, photos){ return { op: 'saveExpense', tx: tx, photos: photos || {} }; }
+function opDeleteExpense(id){ return { op: 'deleteExpense', id: id }; }
+function opSetCats(cats){ return { op: 'cats', cats: cats }; }
+function opSetPay(pay){ return { op: 'pay', pay: pay }; }
+/* restore: replaces everything; photos: { receiptId: {thumb, full} } */
+function opReplaceAll(txs, cats, pay, photos){ return { op: 'replaceAll', txs: txs, cats: cats, pay: pay, photos: photos || {} }; }
+
+/* Commit a list of operations as one transaction. Runs one commit at a time, in order. */
+function commit(ops){
+  var run = function(){
+    if (storageBlocked) return Promise.reject(new Error(storageBlocked));
+    return (isNative ? sqliteCommit(ops) : webCommit(ops)).then(reloadCache);
+  };
+  var p = commitChain.then(run, run);
+  commitChain = p.catch(function(){});
+  return p;
+}
+function reloadCache(){
+  return (isNative ? sqliteLoad() : webLoad()).then(function(c){ cache = c; });
 }
 
-/* ---------- exchange rate ---------- */
-var FALLBACK_RATE = 0.023024;              // PHP→CAD, captured 2026-07-16
-var FALLBACK_DATE = '2026-07-16';
-var rate = FALLBACK_RATE, rateInfo = 'built-in rate (' + FALLBACK_DATE + ')';
+/* Show why a change was not saved — in a dialog, so it can't be missed. */
+function saveFailed(what, e){
+  alert(what + ' was NOT saved.\n\n' + ((e && e.message) || 'Storage error') +
+        '\n\nNothing was changed. Please try again.');
+}
 
-(function initRate(){
-  var cached = store('splitit_rate');
-  if (cached) {
-    try {
-      var c = JSON.parse(cached);
-      if (c && c.rate > 0) { rate = c.rate; rateInfo = 'last known rate (' + c.date + ')'; }
-    } catch(e){}
-  }
-  renderRate();
-  fetch('https://open.er-api.com/v6/latest/PHP')
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      if (d && d.rates && d.rates.CAD > 0) {
-        rate = d.rates.CAD;
-        var today = new Date().toISOString().slice(0,10);
-        rateInfo = 'live rate · ' + today;
-        store('splitit_rate', JSON.stringify({rate: rate, date: today}));
-        renderRate(); recalc(); renderHistory(); renderSummary();
-      }
+/* ======================= SQLite (phone) ======================= */
+var SCHEMA = [
+  'CREATE TABLE IF NOT EXISTS expenses (' +
+  ' id TEXT PRIMARY KEY NOT NULL, description TEXT NOT NULL, date TEXT NOT NULL,' +
+  ' parties INTEGER NOT NULL CHECK (parties >= 1), currency TEXT NOT NULL,' +
+  ' amount REAL NOT NULL CHECK (amount >= 0), home TEXT NOT NULL, rate_to_home REAL NOT NULL CHECK (rate_to_home > 0),' +
+  ' rate_source TEXT, rate_date TEXT, amount_home REAL NOT NULL, created_at INTEGER, updated_at INTEGER);',
+  'CREATE TABLE IF NOT EXISTS receipts (' +
+  ' id TEXT PRIMARY KEY NOT NULL, expense_id TEXT NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,' +
+  ' sort_order INTEGER NOT NULL, category TEXT NOT NULL, amount REAL NOT NULL CHECK (amount >= 0));',
+  'CREATE INDEX IF NOT EXISTS receipts_by_expense ON receipts(expense_id, sort_order);',
+  'CREATE TABLE IF NOT EXISTS photos (' +
+  ' receipt_id TEXT PRIMARY KEY NOT NULL REFERENCES receipts(id) ON DELETE CASCADE,' +
+  ' thumb TEXT NOT NULL, full TEXT NOT NULL);',
+  'CREATE TABLE IF NOT EXISTS categories (name TEXT PRIMARY KEY NOT NULL);',
+  'CREATE TABLE IF NOT EXISTS pay_methods (sort_order INTEGER PRIMARY KEY NOT NULL, label TEXT NOT NULL, value TEXT NOT NULL);',
+  'CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY NOT NULL, value TEXT);'
+].join('\n');
+
+/* Rows come back as objects; the iOS side may add an "ios_columns" row, which is dropped. */
+function rows(res){
+  return ((res && res.values) || []).filter(function(r){ return !(r && r.hasOwnProperty('ios_columns')); });
+}
+function q(statement, values){
+  return SQL.query({ database: DBNAME, statement: statement, values: values || [], readonly: false }).then(rows);
+}
+function sqliteOpen(){
+  if (!SQL) return Promise.reject(new Error('the database component is missing from this build'));
+  return Promise.resolve()
+    .then(function(){ return SQL.checkConnectionsConsistency({ dbNames: [], openModes: [] }).catch(function(){}); })
+    .then(function(){
+      return SQL.createConnection({ database: DBNAME, version: 1, encrypted: false, mode: 'no-encryption', readonly: false })
+        .catch(function(e){ if (!/already exists/i.test((e && e.message) || '')) throw e; });
     })
-    .catch(function(){ /* offline → keep cached/built-in */ renderRate(); });
-})();
+    .then(function(){ return SQL.open({ database: DBNAME, readonly: false }); })
+    .then(function(){
+      /* outside any transaction: turn on foreign keys and full durability */
+      return SQL.execute({ database: DBNAME, statements: 'PRAGMA foreign_keys = ON;\nPRAGMA synchronous = FULL;', transaction: false, readonly: false });
+    })
+    .then(function(){ return q('PRAGMA quick_check;'); })
+    .then(function(r){
+      var v = r[0] ? r[0][Object.keys(r[0])[0]] : 'ok';
+      if (String(v).toLowerCase() !== 'ok') throw new Error('the database failed its integrity check (' + v + ')');
+    })
+    .then(function(){ return SQL.execute({ database: DBNAME, statements: SCHEMA, transaction: true, readonly: false }); })
+    .then(function(){
+      return SQL.executeSet({ database: DBNAME, transaction: true, readonly: false, set: [
+        { statement: 'INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?);', values: ['schema_version', String(SCHEMA_VERSION)] }
+      ]});
+    });
+}
 
-function renderRate(){
-  document.getElementById('rateVal').textContent = rate.toFixed(5);
-  document.getElementById('rateSrc').textContent = rateInfo;
+function expenseRowValues(t){
+  return [t.id, t.desc, t.date, t.parties, t.currency, t.amount, t.home, t.rateToHome,
+          t.rateSource || null, t.rateDate || null, t.amountHome, t.createdAt || t.updatedAt || Date.now(), t.updatedAt || Date.now()];
+}
+var INSERT_EXPENSE = 'INSERT INTO expenses (id, description, date, parties, currency, amount, home, rate_to_home, rate_source, rate_date, amount_home, created_at, updated_at) ' +
+  'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET description=excluded.description, date=excluded.date, ' +
+  'parties=excluded.parties, currency=excluded.currency, amount=excluded.amount, home=excluded.home, rate_to_home=excluded.rate_to_home, ' +
+  'rate_source=excluded.rate_source, rate_date=excluded.rate_date, amount_home=excluded.amount_home, updated_at=excluded.updated_at;';
+var INSERT_RECEIPT = 'INSERT INTO receipts (id, expense_id, sort_order, category, amount) VALUES (?,?,?,?,?) ' +
+  'ON CONFLICT(id) DO UPDATE SET expense_id=excluded.expense_id, sort_order=excluded.sort_order, category=excluded.category, amount=excluded.amount;';
+var PUT_PHOTO = 'INSERT OR REPLACE INTO photos (receipt_id, thumb, full) VALUES (?,?,?);';
+
+function expenseStatements(t, photos){
+  var set = [], ids = [], i;
+  set.push({ statement: INSERT_EXPENSE, values: expenseRowValues(t) });
+  for (i = 0; i < t.items.length; i++) ids.push(t.items[i].id);
+  /* receipts no longer on the expense go (their photos cascade with them) */
+  if (ids.length) {
+    set.push({ statement: 'DELETE FROM receipts WHERE expense_id = ? AND id NOT IN (' + ids.map(function(){ return '?'; }).join(',') + ');',
+               values: [t.id].concat(ids) });
+  } else {
+    set.push({ statement: 'DELETE FROM receipts WHERE expense_id = ?;', values: [t.id] });
+  }
+  for (i = 0; i < t.items.length; i++) {
+    var it = t.items[i];
+    set.push({ statement: INSERT_RECEIPT, values: [it.id, t.id, i, it.cat, it.amt] });
+    if (photos.hasOwnProperty(it.id)) {
+      if (photos[it.id]) set.push({ statement: PUT_PHOTO, values: [it.id, photos[it.id].thumb, photos[it.id].full] });
+      else set.push({ statement: 'DELETE FROM photos WHERE receipt_id = ?;', values: [it.id] });
+    }
+  }
+  return set;
+}
+function payStatements(pay){
+  pay = normalizePay(pay);
+  var set = [{ statement: 'DELETE FROM pay_methods;', values: [] },
+             { statement: 'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?);', values: ['pay_name', pay.name || ''] }];
+  pay.methods.forEach(function(m, i){
+    set.push({ statement: 'INSERT INTO pay_methods (sort_order, label, value) VALUES (?,?,?);', values: [i, m.label, m.value] });
+  });
+  return set;
+}
+function catStatements(cats){
+  var set = [{ statement: 'DELETE FROM categories;', values: [] }];
+  cats.forEach(function(c){ set.push({ statement: 'INSERT OR IGNORE INTO categories (name) VALUES (?);', values: [c] }); });
+  return set;
+}
+function sqliteCommit(ops){
+  var set = [];
+  ops.forEach(function(o){
+    if (o.op === 'setting') {
+      set.push(o.value === null
+        ? { statement: 'DELETE FROM settings WHERE key = ?;', values: [o.key] }
+        : { statement: 'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?);', values: [o.key, String(o.value)] });
+    } else if (o.op === 'saveExpense') {
+      set = set.concat(expenseStatements(o.tx, o.photos));
+    } else if (o.op === 'deleteExpense') {
+      set.push({ statement: 'DELETE FROM expenses WHERE id = ?;', values: [o.id] });       // receipts and photos cascade
+    } else if (o.op === 'cats') {
+      set = set.concat(catStatements(o.cats));
+    } else if (o.op === 'pay') {
+      set = set.concat(payStatements(o.pay));
+    } else if (o.op === 'replaceAll') {
+      set.push({ statement: 'DELETE FROM expenses;', values: [] });                        // cascades to receipts and photos
+      o.txs.forEach(function(t){
+        var ph = {};
+        t.items.forEach(function(it){ if (o.photos[it.id]) ph[it.id] = o.photos[it.id]; });
+        set = set.concat(expenseStatements(t, ph));
+      });
+      if (o.cats && o.cats.length) set = set.concat(catStatements(o.cats));
+      if (o.pay) set = set.concat(payStatements(o.pay));
+    }
+  });
+  if (!set.length) return Promise.resolve();
+  return SQL.executeSet({ database: DBNAME, set: set, transaction: true, readonly: false, returnMode: 'no' });
+}
+function sqliteLoad(){
+  var c = { txs: [], cats: [], pay: { name: '', methods: [] }, settings: {} };
+  return Promise.all([
+    q('SELECT * FROM expenses ORDER BY date DESC, updated_at DESC;'),
+    q('SELECT r.id, r.expense_id, r.sort_order, r.category, r.amount, (p.receipt_id IS NOT NULL) AS has_photo ' +
+      'FROM receipts r LEFT JOIN photos p ON p.receipt_id = r.id ORDER BY r.expense_id, r.sort_order;'),
+    q('SELECT name FROM categories;'),
+    q('SELECT label, value FROM pay_methods ORDER BY sort_order;'),
+    q('SELECT key, value FROM settings;')
+  ]).then(function(r){
+    var byId = {};
+    r[0].forEach(function(e){
+      var t = { id: e.id, desc: e.description, date: e.date, parties: e.parties, currency: e.currency,
+                amount: e.amount, home: e.home, rateToHome: e.rate_to_home, rateSource: e.rate_source,
+                rateDate: e.rate_date, amountHome: e.amount_home, createdAt: e.created_at, updatedAt: e.updated_at, items: [] };
+      byId[t.id] = t; c.txs.push(t);
+    });
+    r[1].forEach(function(x){
+      if (byId[x.expense_id]) byId[x.expense_id].items.push({ id: x.id, cat: x.category, amt: x.amount, photo: !!Number(x.has_photo) });
+    });
+    c.cats = r[2].map(function(x){ return x.name; });
+    r[4].forEach(function(x){ c.settings[x.key] = x.value; });
+    c.pay = { name: c.settings.pay_name || '', methods: r[3].map(function(x){ return { label: x.label, value: x.value }; }) };
+    return c;
+  });
+}
+function sqlitePhoto(receiptId, which){
+  return q('SELECT ' + (which === 'thumb' ? 'thumb' : 'full') + ' AS d FROM photos WHERE receipt_id = ?;', [receiptId])
+    .then(function(r){ return r[0] ? r[0].d : null; });
+}
+function sqliteThumbs(ids){
+  if (!ids.length) return Promise.resolve({});
+  return q('SELECT receipt_id, thumb FROM photos WHERE receipt_id IN (' + ids.map(function(){ return '?'; }).join(',') + ');', ids)
+    .then(function(r){ var m = {}; r.forEach(function(x){ m[x.receipt_id] = x.thumb; }); return m; });
+}
+
+/* ======================= web browser (test page) ======================= */
+var WEB_KEY = 'fairpot_db';
+var webState = null;
+function webEmpty(){ return { txs: [], photos: {}, cats: [], pay: { name: '', methods: [] }, settings: {} }; }
+function webCommit(ops){
+  var next = JSON.parse(JSON.stringify(webState));             // work on a copy; the committed state is untouched
+  ops.forEach(function(o){
+    if (o.op === 'setting') { if (o.value === null) delete next.settings[o.key]; else next.settings[o.key] = String(o.value); }
+    else if (o.op === 'saveExpense') webPutExpense(next, o.tx, o.photos);
+    else if (o.op === 'deleteExpense') webDeleteExpense(next, o.id);
+    else if (o.op === 'cats') next.cats = o.cats.slice();
+    else if (o.op === 'pay') next.pay = normalizePay(o.pay);
+    else if (o.op === 'replaceAll') {
+      next.txs = []; next.photos = {};
+      o.txs.forEach(function(t){
+        var ph = {};
+        t.items.forEach(function(it){ if (o.photos[it.id]) ph[it.id] = o.photos[it.id]; });
+        webPutExpense(next, t, ph);
+      });
+      if (o.cats && o.cats.length) next.cats = o.cats.slice();
+      if (o.pay) next.pay = normalizePay(o.pay);
+    }
+  });
+  if (storageOK) {
+    try { window.localStorage.setItem(WEB_KEY, JSON.stringify(next)); }
+    catch(e){ return Promise.reject(new Error('this browser’s storage is full')); }
+  }
+  webState = next;                                             // committed
+  return Promise.resolve();
+}
+function webPutExpense(st, t, photos){
+  var old = null, i;
+  for (i = 0; i < st.txs.length; i++) if (st.txs[i].id === t.id) { old = st.txs[i]; break; }
+  var keep = {};
+  t.items.forEach(function(it){ keep[it.id] = 1; });
+  if (old) old.items.forEach(function(it){ if (!keep[it.id]) delete st.photos[it.id]; });   // cascade
+  var rec = JSON.parse(JSON.stringify(t));
+  rec.items.forEach(function(it){ delete it.photo; });
+  if (old) st.txs[i] = rec; else st.txs.push(rec);
+  Object.keys(photos).forEach(function(rid){ if (photos[rid]) st.photos[rid] = photos[rid]; else delete st.photos[rid]; });
+}
+function webDeleteExpense(st, id){
+  st.txs = st.txs.filter(function(t){
+    if (t.id !== id) return true;
+    t.items.forEach(function(it){ delete st.photos[it.id]; });                            // cascade
+    return false;
+  });
+}
+function webLoad(){
+  var st = webState, c = { txs: [], cats: st.cats.slice(), pay: normalizePay(st.pay), settings: JSON.parse(JSON.stringify(st.settings)) };
+  c.txs = st.txs.map(function(t){
+    var x = JSON.parse(JSON.stringify(t));
+    x.items.forEach(function(it){ it.photo = !!st.photos[it.id]; });
+    return x;
+  }).sort(function(a, b){ return (b.date || '').localeCompare(a.date || '') || (b.updatedAt || 0) - (a.updatedAt || 0); });
+  return Promise.resolve(c);
+}
+function webOpen(){
+  try {
+    window.localStorage.setItem('_fairpot_test', '1');
+    window.localStorage.removeItem('_fairpot_test');
+  } catch (e) { storageOK = false; }
+  webState = webEmpty();
+  if (!storageOK) return Promise.resolve();
+  var raw = null;
+  try { raw = window.localStorage.getItem(WEB_KEY); } catch(e){}
+  if (raw) {
+    try { webState = JSON.parse(raw); } catch(e){ return Promise.reject(new Error('the saved test data is damaged')); }
+    return Promise.resolve();
+  }
+  /* earlier test versions (v0.2–v0.3) kept separate keys; bring them over once */
+  var old = null;
+  try { old = window.localStorage.getItem('fairpot_txs'); } catch(e){}
+  if (!old) return Promise.resolve();
+  var txs = []; try { txs = JSON.parse(old) || []; } catch(e){}
+  var photos = {};
+  txs.forEach(function(t){
+    migrate(t);
+    t.items.forEach(function(it){ if (it.photo && String(it.photo).indexOf('data:') === 0) photos[it.id] = { thumb: it.photo, full: it.photo }; });
+  });
+  var ops = [opReplaceAll(txs, safeParse(window.localStorage.getItem('fairpot_cats'), []), safeParse(window.localStorage.getItem('fairpot_pay'), null), photos)];
+  ['fp_home','fp_lastcur','fp_recent','fp_rates','fp_lastbackup'].forEach(function(k){
+    var v = window.localStorage.getItem(k); if (v !== null) ops.push(opSetting(k, v));
+  });
+  return webCommit(ops);
+}
+function safeParse(s, dflt){ try { var v = JSON.parse(s); return v == null ? dflt : v; } catch(e){ return dflt; } }
+function webPhoto(receiptId, which){
+  var p = webState.photos[receiptId];
+  return Promise.resolve(p ? p[which === 'thumb' ? 'thumb' : 'full'] : null);
+}
+function webThumbs(ids){
+  var m = {};
+  ids.forEach(function(id){ if (webState.photos[id]) m[id] = webState.photos[id].thumb; });
+  return Promise.resolve(m);
+}
+
+/* ---------- common entry points ---------- */
+function openStorage(){
+  return (isNative ? sqliteOpen() : webOpen())
+    .then(reloadCache)
+    .catch(function(e){
+      storageBlocked = 'Your saved data could not be opened (' + ((e && e.message) || 'storage error') +
+        '). To protect it, nothing will be saved until it opens. Close the app completely and open it again.';
+    });
+}
+function getPhoto(receiptId){ return isNative ? sqlitePhoto(receiptId, 'full') : webPhoto(receiptId, 'full'); }
+function getThumbs(ids){ return isNative ? sqliteThumbs(ids) : webThumbs(ids); }
+
+/* Thumbnails are loaded on demand and kept until that receipt's photo changes. */
+var thumbCache = {};
+function forgetThumbs(ids){ ids.forEach(function(id){ delete thumbCache[id]; }); }
+function fillThumbs(){
+  var imgs = document.querySelectorAll('img[data-rid]'), need = [], i;
+  for (i = 0; i < imgs.length; i++) {
+    var id = imgs[i].getAttribute('data-rid');
+    if (thumbCache[id]) imgs[i].src = thumbCache[id];
+    else if (need.indexOf(id) === -1) need.push(id);
+  }
+  if (!need.length) return;
+  getThumbs(need).then(function(m){
+    Object.keys(m).forEach(function(id){ thumbCache[id] = m[id]; });
+    var imgs2 = document.querySelectorAll('img[data-rid]');
+    for (var j = 0; j < imgs2.length; j++) {
+      var id2 = imgs2[j].getAttribute('data-rid');
+      if (thumbCache[id2]) imgs2[j].src = thumbCache[id2];
+    }
+  }).catch(function(){});
+}
+
+/* A data URL as a temporary file the phone's share sheet can send. */
+function tempFile(name, dataURL){
+  return FS.writeFile({ path: name, directory: 'CACHE', data: dataURL.split(',')[1] })
+    .then(function(){ return FS.getUri({ path: name, directory: 'CACHE' }); })
+    .then(function(r){ return r.uri; });
 }
 
 /* ---------- helpers ---------- */
 function $(id){ return document.getElementById(id); }
-function fmtPHP(n){ return '₱' + Number(n || 0).toLocaleString('en-PH',{minimumFractionDigits:2, maximumFractionDigits:2}); }
-function fmtCAD(n){ return 'C$' + Number(n || 0).toLocaleString('en-CA',{minimumFractionDigits:2, maximumFractionDigits:2}); }
 function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(msg){
   var t = $('toast');
@@ -421,6 +796,223 @@ function todayStr(){
 function uid(p){ return p + Date.now().toString(36) + Math.floor(Math.random()*100000).toString(36); }
 function pad(s, n){ s = String(s); while (s.length < n) s += ' '; return s; }
 
+/* ---------- currencies: names, symbols, decimals ---------- */
+var curNames = null;
+try { curNames = new Intl.DisplayNames(['en'], { type: 'currency' }); } catch(e){ curNames = null; }
+function curName(code){
+  var n = null;
+  try { n = curNames ? curNames.of(code) : null; } catch(e){ n = null; }
+  return n && n !== code ? n : code;
+}
+
+/* Dollar-style currencies all print as "$"; give them an unambiguous prefix. */
+var DOLLAR_PREFIX = { CAD:'C$', USD:'US$', AUD:'A$', NZD:'NZ$', HKD:'HK$', SGD:'S$', MXN:'MX$',
+                      TWD:'NT$', BSD:'B$', BBD:'Bds$', JMD:'J$', TTD:'TT$', FJD:'FJ$', BND:'B$' };
+var fmtCache = {};
+function formatterFor(cur){
+  if (fmtCache[cur]) return fmtCache[cur];
+  var f;
+  try { f = new Intl.NumberFormat('en-CA', { style:'currency', currency:cur, currencyDisplay:'narrowSymbol' }); }
+  catch(e){ try { f = new Intl.NumberFormat('en-CA', { style:'currency', currency:cur }); } catch(e2){ f = null; } }
+  fmtCache[cur] = f;
+  return f;
+}
+function decimals(cur){
+  var f = formatterFor(cur);
+  try { return f ? f.resolvedOptions().maximumFractionDigits : 2; } catch(e){ return 2; }
+}
+function roundCur(n, cur){
+  var p = Math.pow(10, decimals(cur));
+  return Math.round((Number(n) || 0) * p) / p;
+}
+function fmtMoney(n, cur){
+  var f = formatterFor(cur);
+  if (!f) return cur + ' ' + (Number(n) || 0).toFixed(2);
+  var parts = f.formatToParts(Number(n) || 0), out = '', i;
+  for (i = 0; i < parts.length; i++) {
+    var p = parts[i];
+    if (p.type === 'currency') {
+      if (p.value === '$' || p.value === cur) out += DOLLAR_PREFIX[cur] || (cur + ' ');
+      else out += p.value;
+    } else if (p.type === 'literal' && parts[i-1] && parts[i-1].type === 'currency' && parts[i-1].value === cur) {
+      /* the code already carries a space */
+    } else out += p.value;
+  }
+  return out;
+}
+function fmtRate(v){
+  if (!(v > 0)) return '—';
+  if (v >= 100) return v.toFixed(2);
+  if (v >= 1) return v.toFixed(4);
+  return Number(v.toPrecision(4)).toString();
+}
+
+/* ---------- home currency ---------- */
+var HOME = 'CAD';               // set from storage at start-up
+
+/* ---------- exchange rates ----------
+   One table a day from open.er-api.com (keyless; its terms ask for the credit link in the header).
+   A table has a base B and rates[X] = units of X per 1 B, so for any two currencies:
+   1 X = rates[HOME] / rates[X] HOME. That works whatever the table's base is. */
+var FALLBACK_TABLE = {           // approximate, CAD base — used only before the first download
+  base:'CAD', date:'2026-07-16',
+  rates:{ CAD:1, PHP:43.43, USD:0.73, EUR:0.63, GBP:0.54, JPY:107, AUD:1.10,
+          HKD:5.70, SGD:0.94, MXN:13.6, CNY:5.2, INR:62 }
+};
+var rateTable = FALLBACK_TABLE, rateTableSource = 'fallback';
+
+function loadStoredRates(){
+  try {
+    var c = JSON.parse(store('fp_rates') || 'null');
+    if (c && c.rates && c.base) { rateTable = c; rateTableSource = 'cached'; }
+  } catch(e){}
+}
+
+function rateTo(cur){
+  if (cur === HOME) return 1;
+  var r = rateTable.rates;
+  if (!r || !(r[cur] > 0) || !(r[HOME] > 0)) {
+    r = FALLBACK_TABLE.rates;
+    if (!(r[cur] > 0) || !(r[HOME] > 0)) return null;
+  }
+  return r[HOME] / r[cur];
+}
+function tableSourceFor(cur){
+  if (cur === HOME) return 'home';
+  var r = rateTable.rates;
+  if (r && r[cur] > 0 && r[HOME] > 0) return rateTableSource;
+  return 'fallback';
+}
+function sourceLabel(src, date){
+  var d = date ? ' · ' + date : '';
+  return { live:'live rate' + d, cached:'last downloaded rate' + d, fallback:'approximate built-in rate' + d,
+           manual:'your own rate' + d, saved:'rate saved with this expense' + d, home:'home currency' }[src] || (src + d);
+}
+
+function refreshRates(){
+  var today = todayStr();
+  if (rateTableSource === 'live' && rateTable.date === today) return;
+  fetch('https://open.er-api.com/v6/latest/' + encodeURIComponent(HOME))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d && d.result === 'success' && d.rates && d.rates[HOME] > 0) {
+        rateTable = { base: HOME, date: today, rates: d.rates };
+        rateTableSource = 'live';
+        commit([opSetting('fp_rates', JSON.stringify(rateTable))]).catch(function(){});
+        renderAll();
+      }
+    })
+    .catch(function(){ /* offline → keep cached or built-in rates */ });
+}
+
+function allCurrencies(){
+  var set = {}, k;
+  for (k in FALLBACK_TABLE.rates) set[k] = 1;
+  if (rateTable.rates) for (k in rateTable.rates) set[k] = 1;
+  set[HOME] = 1;
+  return Object.keys(set).sort();
+}
+function getRecent(){ try { return JSON.parse(store('fp_recent') || '[]') || []; } catch(e){ return []; } }
+function pushRecent(cur){
+  var r = getRecent().filter(function(c){ return c !== cur; });
+  r.unshift(cur);
+  commit([opSetting('fp_recent', JSON.stringify(r.slice(0, 6)))]).catch(function(){});
+}
+
+/* ---------- the expense being entered ---------- */
+var entryCur = 'CAD';           // set from storage at start-up
+/* entryRate is null while the live table decides; otherwise a fixed rate:
+   { value, source, date } — "saved" when editing an old expense, "manual" when typed. */
+var entryRate = null;
+
+function currentRate(){
+  if (entryCur === HOME) return { value: 1, source: 'home', date: '' };
+  if (entryRate) return entryRate;
+  return { value: rateTo(entryCur), source: tableSourceFor(entryCur),
+           date: tableSourceFor(entryCur) === 'fallback' ? FALLBACK_TABLE.date : rateTable.date };
+}
+
+function renderRate(){
+  var cr = currentRate();
+  if (entryCur === HOME) {
+    $('rateTop').innerHTML = 'Home currency <b>' + esc(HOME) + '</b>';
+    $('rateSrc').textContent = 'choose a currency below to convert';
+  } else {
+    $('rateTop').innerHTML = '1 ' + esc(entryCur) + ' = <b>' + fmtRate(cr.value) + '</b> ' + esc(HOME);
+    $('rateSrc').textContent = sourceLabel(cr.source, cr.date);
+  }
+}
+function renderCurBtn(){
+  $('curBtn').innerHTML = '<span class="code">' + esc(entryCur) + '</span>' + esc(curName(entryCur)) +
+    (entryCur === HOME ? ' (home)' : '');
+}
+function setEntryCurrency(cur){
+  if (cur === entryCur) return;
+  entryCur = cur;
+  entryRate = null;              // a new currency always starts from the current table
+  renderCurBtn(); renderItems(); recalc();
+}
+function setManualRate(){
+  if (entryCur === HOME) { openCurPicker('entry'); return; }
+  var cr = currentRate();
+  var v = prompt('Your own rate\n\n1 ' + entryCur + ' = how many ' + HOME + '?', cr.value > 0 ? fmtRate(cr.value) : '');
+  if (v === null) return;
+  v = parseFloat(String(v).replace(/,/g, ''));
+  if (!(v > 0)) { toast('That rate doesn’t look right'); return; }
+  entryRate = { value: v, source: 'manual', date: todayStr() };
+  recalc();
+  toast('Using your rate: 1 ' + entryCur + ' = ' + fmtRate(v) + ' ' + HOME);
+}
+
+/* ---------- currency picker (for an expense, or the home currency) ---------- */
+var pickerMode = 'entry';
+function openCurPicker(mode){
+  pickerMode = mode;
+  $('curTitle').textContent = mode === 'home' ? 'Home currency' : 'Currency of this expense';
+  $('curSearch').value = '';
+  renderCurList();
+  $('curModal').style.display = 'block';
+}
+function closeCurPicker(){ $('curModal').style.display = 'none'; }
+function curRow(code, selected){
+  return '<button type="button" class="' + (code === selected ? 'sel' : '') + '" onclick="pickCurrency(\'' + code + '\')">' +
+    '<span class="code">' + esc(code) + '</span><span>' + esc(curName(code)) + (code === selected ? ' ✓' : '') + '</span></button>';
+}
+function renderCurList(){
+  var q = ($('curSearch').value || '').trim().toLowerCase();
+  var selected = pickerMode === 'home' ? HOME : entryCur;
+  var all = allCurrencies(), h = '', i;
+  var match = function(c){ return !q || c.toLowerCase().indexOf(q) !== -1 || curName(c).toLowerCase().indexOf(q) !== -1; };
+  if (!q) {
+    var top = [HOME].concat(getRecent().filter(function(c){ return c !== HOME && all.indexOf(c) !== -1; }));
+    h += '<div class="grp">Home and recent</div>';
+    for (i = 0; i < top.length; i++) h += curRow(top[i], selected);
+    h += '<div class="grp">All currencies</div>';
+  }
+  var n = 0;
+  for (i = 0; i < all.length; i++) if (match(all[i])) { h += curRow(all[i], selected); n++; }
+  if (!n) h += '<div class="grp">No currency matches “' + esc(q) + '”</div>';
+  $('curList').innerHTML = h;
+}
+function pickCurrency(code){
+  closeCurPicker();
+  if (pickerMode === 'home') { setHome(code); return; }
+  pushRecent(code);
+  setEntryCurrency(code);
+}
+function setHome(code){
+  if (code === HOME) return;
+  if (!confirm('Show all totals in ' + code + ' (' + curName(code) + ')?\n\n' +
+               'Expenses already saved keep their own rates. Ones saved with a different home currency ' +
+               'are converted to ' + code + ' at today’s rate in the totals.')) return;
+  commit([opSetting('fp_home', code)]).then(function(){
+    HOME = code;
+    entryRate = null;
+    renderAll();
+    refreshRates();
+    toast('Home currency is now ' + HOME);
+  }, function(e){ saveFailed('The home currency change', e); });
+}
 /* ---------- categories ---------- */
 var DEFAULT_CATS = ['Beverages','Fees','Food','Gifts','Groceries','Lodging',
                     'Other','Shopping','Tip','Transport','Utilities'];
@@ -429,38 +1021,35 @@ function sortCats(a){
   return a.slice().sort(function(x, y){ return x.toLowerCase().localeCompare(y.toLowerCase()); });
 }
 function getCats(){
-  var raw = store('splitit_cats');
-  if (raw) {
-    try { var a = JSON.parse(raw); if (a && a.length) return sortCats(a); } catch(e){}
-  }
-  return sortCats(DEFAULT_CATS);
+  return cache.cats && cache.cats.length ? sortCats(cache.cats) : sortCats(DEFAULT_CATS);
 }
-function saveCats(a){ store('splitit_cats', JSON.stringify(sortCats(a))); }
+function catsChange(a){ return [opSetCats(sortCats(a))]; }
 
+/* Resolves to the category's name once it is saved (or already exists). */
 function addCategory(name){
   name = String(name || '').trim();
-  if (!name) return null;
+  if (!name) return Promise.resolve(null);
   if (name.length > 24) name = name.slice(0, 24);
   var cats = getCats(), i;
-  for (i = 0; i < cats.length; i++) if (cats[i].toLowerCase() === name.toLowerCase()) return cats[i];
+  for (i = 0; i < cats.length; i++) if (cats[i].toLowerCase() === name.toLowerCase()) return Promise.resolve(cats[i]);
   cats.push(name);
-  saveCats(cats);
-  return name;
+  return commit(catsChange(cats)).then(function(){ return name; });
 }
 function removeCategory(name){
   var cats = getCats(), out = [], i;
   for (i = 0; i < cats.length; i++) if (cats[i] !== name) out.push(cats[i]);
   if (!out.length) return;
-  saveCats(out);
-  renderCatManager(); renderItems();
+  commit(catsChange(out)).then(function(){ renderCatManager(); renderItems(); },
+                               function(e){ saveFailed('Removing the category', e); });
 }
 function addCategoryFromInput(){
   var el = $('newCatInput');
-  var added = addCategory(el.value);
-  if (!added) { toast('Type a category name first'); return; }
-  el.value = '';
-  renderCatManager(); renderItems();
-  toast('Added “' + added + '”');
+  if (!String(el.value || '').trim()) { toast('Type a category name first'); return; }
+  addCategory(el.value).then(function(added){
+    el.value = '';
+    renderCatManager(); renderItems();
+    toast('Added “' + added + '”');
+  }, function(e){ saveFailed('The new category', e); });
 }
 function catOptions(selected){
   var cats = getCats(), out = '', i;
@@ -483,8 +1072,8 @@ function renderCatManager(){
 }
 
 /* ---------- receipt items (the working set on the New tab) ---------- */
-/* Every transaction owns items[]: { id, cat, amt, photo }.
-   The transaction total is always the sum of its receipts. */
+/* Every expense owns items[]: { id, cat, amt, photo }, amounts in the expense's currency.
+   The expense total is always the sum of its receipts. */
 var items = [];
 var editingId = null;
 var photoTargetIndex = -1;
@@ -506,12 +1095,15 @@ function removeItem(i){
 function setItemCat(i, val){
   if (val === '__new__') {
     var name = prompt('New category name');
-    var added = addCategory(name);
-    if (added) { items[i].cat = added; renderCatManager(); }
-    renderItems();
-  } else {
-    items[i].cat = val;
+    renderItems();                                  // put the pull-down back while saving
+    if (!name || !String(name).trim()) return;
+    addCategory(name).then(function(added){
+      if (items[i]) items[i].cat = added;
+      renderCatManager(); renderItems(); recalc();
+    }, function(e){ saveFailed('The new category', e); });
+    return;
   }
+  items[i].cat = val;
   recalc();
 }
 function setItemAmt(i, val){
@@ -527,22 +1119,30 @@ function clearItemPhoto(i){
   renderItems(); recalc();
 }
 function viewItemPhoto(i){
-  if (items[i] && items[i].photo) showViewer(items[i].photo);
+  var ph = items[i] && items[i].photo;
+  if (!ph) return;
+  if (typeof ph === 'object') { showViewer(ph.full); return; }
+  getPhoto(items[i].id).then(function(d){ if (d) showViewer(d); else toast('Photo not found'); },
+                             function(e){ toast('Could not open the photo'); });
 }
 
 function renderItems(){
-  var h = '', i;
+  var h = '', i, dec = decimals(entryCur);
+  var ph = fmtMoney(0, entryCur);
+  var step = dec ? (1 / Math.pow(10, dec)).toFixed(dec) : '1';
   for (i = 0; i < items.length; i++) {
     var it = items[i];
     h += '<div class="item">' +
       '<div class="row">' +
         '<div class="catcol"><select aria-label="Category" onchange="setItemCat(' + i + ', this.value)">' + catOptions(it.cat) + '</select></div>' +
-        '<div><input type="number" inputmode="decimal" min="0" step="0.01" placeholder="₱ 0.00" aria-label="Amount in pesos" ' +
+        '<div><input type="number" inputmode="decimal" min="0" step="' + step + '" placeholder="' + esc(ph) + '" aria-label="Amount in ' + esc(entryCur) + '" ' +
           'value="' + esc(it.amt) + '" oninput="setItemAmt(' + i + ', this.value)"></div>' +
       '</div>' +
       '<div class="item-tools">' +
         (it.photo ? '<span class="thumb-wrap">' +
-                      '<img class="item-thumb" src="' + it.photo + '" alt="Receipt" onclick="viewItemPhoto(' + i + ')">' +
+                      (typeof it.photo === 'object'
+                        ? '<img class="item-thumb" src="' + esc(it.photo.thumb) + '" alt="Receipt" onclick="viewItemPhoto(' + i + ')">'
+                        : '<img class="item-thumb" data-rid="' + esc(it.id) + '" src="' + BLANK_IMG + '" alt="Receipt" onclick="viewItemPhoto(' + i + ')">') +
                       '<button class="thumb-x" type="button" title="Remove photo" onclick="clearItemPhoto(' + i + ')">✕</button>' +
                     '</span>' : '') +
         '<button class="mini" type="button" onclick="pickPhoto(' + i + ')">📷 ' + (it.photo ? 'Change photo' : 'Add photo') + '</button>' +
@@ -551,6 +1151,7 @@ function renderItems(){
     '</div>';
   }
   $('itemsList').innerHTML = h;
+  fillThumbs();
 }
 
 /* ---------- receipt photos ---------- */
@@ -560,8 +1161,12 @@ $('photoInput').addEventListener('change', function(){
   if (!f || photoTargetIndex < 0) return;
   compressImage(f, function(dataURL){
     if (!dataURL) { toast('Could not read that photo'); return; }
-    items[photoTargetIndex].photo = dataURL;
-    renderItems(); recalc();
+    var target = photoTargetIndex;
+    makeThumb(dataURL, function(thumb){
+      if (!items[target]) return;
+      items[target].photo = { thumb: thumb || dataURL, full: dataURL };   // saved with the expense
+      renderItems(); recalc();
+    });
   });
 });
 
@@ -592,6 +1197,24 @@ function compressImage(file, cb){
   img.src = url;
 }
 
+var BLANK_IMG = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+/* A small copy of a photo for lists (about 240 px). */
+function makeThumb(dataURL, cb){
+  var img = new Image();
+  img.onload = function(){
+    try {
+      var MAX = 240, w = img.width, h = img.height;
+      if (w > MAX || h > MAX) { var sc = MAX / Math.max(w, h); w = Math.round(w * sc); h = Math.round(h * sc); }
+      var cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(cv.toDataURL('image/jpeg', 0.6));
+    } catch(e){ cb(null); }
+  };
+  img.onerror = function(){ cb(null); };
+  img.src = dataURL;
+}
+function makeThumbP(dataURL){ return new Promise(function(res){ makeThumb(dataURL, function(t){ res(t || dataURL); }); }); }
 function showViewer(src){
   $('viewerImg').src = src;
   $('photoViewer').style.display = 'flex';
@@ -600,7 +1223,9 @@ function viewPhoto(txId, idx){
   var list = loadTxs(), i;
   for (i = 0; i < list.length; i++) {
     if (list[i].id === txId && list[i].items[idx] && list[i].items[idx].photo) {
-      showViewer(list[i].items[idx].photo); return;
+      getPhoto(list[i].items[idx].id).then(function(d){ if (d) showViewer(d); else toast('Photo not found'); },
+                                            function(){ toast('Could not open the photo'); });
+      return;
     }
   }
 }
@@ -609,71 +1234,102 @@ function closeViewer(){
   $('viewerImg').removeAttribute('src');
 }
 
-/* ---------- transactions ---------- */
-/* v4 records carried a typed amountPHP and one optional photo.
-   migrate() folds those into a single "Other" receipt so every record,
-   old or new, has the same shape. It is lossless and idempotent. */
+/* ---------- expenses ---------- */
+/* Record shape (v0.2.0):
+   { id, desc, date, parties, items[], currency, amount, home, rateToHome, rateSource, rateDate,
+     amountHome, updatedAt }
+   Older records (Split It v4/v5 and Fairpot v0.1.0) were pesos to C$; migrate() converts them
+   losslessly, keeping each one's saved rate. It is idempotent. */
 function migrate(t){
   if (!t) return t;
   if (!t.items || !t.items.length) {
     t.items = [{ id: uid('it'), cat: 'Other', amt: Number(t.amountPHP) || 0, photo: t.photo || null }];
   }
+  if (!t.currency) {
+    var sum = 0, i;
+    for (i = 0; i < t.items.length; i++) sum += Number(t.items[i].amt) || 0;
+    var amt = Number(t.amountPHP) || sum;
+    var r = Number(t.rate) > 0 ? Number(t.rate) : FALLBACK_TABLE.rates.CAD / FALLBACK_TABLE.rates.PHP;
+    t.currency = 'PHP';
+    t.amount = amt;
+    t.home = 'CAD';
+    t.rateToHome = r;
+    t.rateSource = 'saved';
+    t.rateDate = t.date || '';
+    t.amountHome = Number(t.amountCAD) > 0 ? Number(t.amountCAD) : roundCur(amt * r, 'CAD');
+  }
+  if (!(t.parties >= 1)) t.parties = 1;
   return t;
 }
 
-function loadTxs(){
-  var list;
-  try { list = JSON.parse(store('splitit_txs') || '[]'); } catch(e){ list = []; }
-  for (var i = 0; i < list.length; i++) list[i] = migrate(list[i]);
-  return list;
+/* The expense's total in today's home currency. Normally the saved figure; if the home
+   currency has changed since it was saved, converted at today's rate. */
+function homeAmount(t){
+  if (t.home === HOME) return Number(t.amountHome) || 0;
+  if (t.currency === HOME) return Number(t.amount) || 0;
+  var r = rateTo(t.currency);
+  return r ? roundCur(t.amount * r, HOME) : 0;
 }
-function saveTxs(list){
-  var ok = store('splitit_txs', JSON.stringify(list));
-  if (ok === false) toast('Storage is full — try deleting old photos');
-}
-function saveTxsLocal(list){ saveTxs(list); }
+
 
 function currentInput(){
   var n = Math.max(1, parseInt($('parties').value, 10) || 1);
   var clean = [], total = 0, i;
   for (i = 0; i < items.length; i++) {
-    var amt = parseFloat(items[i].amt) || 0;
+    var amt = roundCur(parseFloat(items[i].amt) || 0, entryCur);
     if (amt <= 0 && !items[i].photo) continue;
     clean.push({ id: items[i].id, cat: items[i].cat, amt: amt, photo: items[i].photo || null });
     total += amt;
   }
+  total = roundCur(total, entryCur);
+  var cr = currentRate();
   return {
     desc: ($('desc').value || '').trim(),
     date: $('date').value || todayStr(),
     items: clean,
-    amountPHP: total,
     parties: n,
-    rate: rate,
-    amountCAD: total * rate,
-    eachPHP: total / n,
-    eachCAD: (total * rate) / n
+    currency: entryCur,
+    amount: total,
+    home: HOME,
+    rateToHome: cr.value,
+    rateSource: cr.source,
+    rateDate: cr.date,
+    amountHome: cr.value > 0 ? roundCur(total * cr.value, HOME) : null
   };
 }
 
 function recalc(){
-  var c = currentInput(), h = '', i;
+  var c = currentInput(), h = '', i, cur = c.currency, foreign = cur !== HOME;
   if (!c.items.length) {
     h += '<div class="line"><span>No receipts entered yet</span><b>—</b></div>';
   } else {
     for (i = 0; i < c.items.length; i++) {
       h += '<div class="line"><span>' + esc(c.items[i].cat) + (c.items[i].photo ? ' 📎' : '') +
-           '</span><b>' + fmtPHP(c.items[i].amt) + '</b></div>';
+           '</span><b>' + fmtMoney(c.items[i].amt, cur) + '</b></div>';
     }
   }
   h += '<div class="rule"></div>';
-  h += '<div class="line"><span>Total of ' + c.items.length + ' receipt' + (c.items.length === 1 ? '' : 's') + '</span><b>' + fmtPHP(c.amountPHP) + '</b></div>';
-  h += '<div class="line"><span>Converted at ₱1 = ' + rate.toFixed(5) + '</span><b>' + fmtCAD(c.amountCAD) + '</b></div>';
+  h += '<div class="line"><span>Total of ' + c.items.length + ' receipt' + (c.items.length === 1 ? '' : 's') + '</span><b>' + fmtMoney(c.amount, cur) + '</b></div>';
+  if (foreign) {
+    h += '<div class="line tap" onclick="setManualRate()"><span>Rate (tap to change)</span><b>1 ' + esc(cur) + ' = ' +
+         fmtRate(c.rateToHome) + ' ' + esc(HOME) + '</b></div>';
+    if (c.rateSource !== 'manual' && c.rateSource !== 'saved' && c.date !== todayStr()) {
+      h += '<div class="warnline">This expense is dated ' + esc(c.date) + ', but the rate is today’s. ' +
+           'Tap the rate to enter the one you actually paid.</div>';
+    }
+    if (!(c.rateToHome > 0)) {
+      h += '<div class="warnline">No rate is available for ' + esc(cur) + ' yet. Tap the rate to enter one.</div>';
+    } else {
+      h += '<div class="line"><span>In ' + esc(curName(HOME)) + '</span><b>' + fmtMoney(c.amountHome, HOME) + '</b></div>';
+    }
+  }
   h += '<div class="line"><span>Divided between</span><b>' + c.parties + ' ' + (c.parties === 1 ? 'person' : 'people') + '</b></div>';
   h += '<div class="rule"></div>';
-  h += '<div class="each">' + fmtPHP(c.eachPHP) + ' <small>/ person</small></div>';
-  h += '<div class="cadline">≈ ' + fmtCAD(c.eachCAD) + ' / person</div>';
-  h += '<div class="fx">' + esc(rateInfo) + '</div>';
+  h += '<div class="each">' + fmtMoney(c.amount / c.parties, cur) + ' <small>/ person</small></div>';
+  if (foreign && c.rateToHome > 0) h += '<div class="cadline">≈ ' + fmtMoney(c.amountHome / c.parties, HOME) + ' / person</div>';
+  if (foreign) h += '<div class="fx">' + esc(sourceLabel(c.rateSource, c.rateDate)) + '</div>';
   $('resultBox').innerHTML = h;
+  renderRate();
 }
 
 function stepParties(d){
@@ -682,26 +1338,44 @@ function stepParties(d){
   recalc();
 }
 
+var busy = false;                  // one save at a time from the buttons
+function setBusy(on, label){
+  busy = on;
+  var b = $('saveBtn');
+  b.disabled = on;
+  b.textContent = on ? (label || 'Saving…') : (editingId ? 'Update' : 'Save');
+}
+var editOrig = null;              // the expense as it was in the database when editing began
 function saveTx(){
+  if (busy) return;
   var c = currentInput();
-  if (!(c.amountPHP > 0)) { toast('Add a receipt with an amount first'); return; }
+  if (!(c.amount > 0)) { toast('Add a receipt with an amount first'); return; }
+  if (!(c.rateToHome > 0)) { toast('Enter a rate for ' + c.currency + ' first'); setManualRate(); return; }
   if (!c.desc) c.desc = 'Expense';
-  c.photo = null;                 // photos live on the receipts
-  c.updatedAt = Date.now();
-  var list = loadTxs(), i;
-  if (editingId) {
-    for (i = 0; i < list.length; i++) {
-      if (list[i].id === editingId) { c.id = editingId; list[i] = c; break; }
+  var wasEdit = !!editingId, now = Date.now();
+  c.id = wasEdit ? editingId : 'tx' + now + Math.floor(Math.random()*1000);
+  c.createdAt = wasEdit && editOrig ? (editOrig.createdAt || now) : now;
+  c.updatedAt = now;
+  /* photo changes: new ones are stored, removed ones deleted, kept ones left alone */
+  var photos = {}, changed = [];
+  c.items.forEach(function(it){
+    if (it.photo && typeof it.photo === 'object') { photos[it.id] = it.photo; changed.push(it.id); }
+    else if (!it.photo && editOrig) {
+      editOrig.items.forEach(function(o){ if (o.id === it.id && o.photo) { photos[it.id] = null; changed.push(it.id); } });
     }
-    toast('Expense updated');
-  } else {
-    c.id = 'tx' + Date.now() + Math.floor(Math.random()*1000);
-    list.unshift(c);
-    toast('Expense saved');
-  }
-  saveTxs(list);
-  cancelEdit(true);
-  renderHistory(); renderSummary();
+  });
+  setBusy(true);
+  commit([opSaveExpense(c, photos), opSetting('fp_lastcur', c.currency)]).then(function(){
+    setBusy(false);
+    forgetThumbs(changed);
+    pushRecent(c.currency);
+    cancelEdit(true);               // the form clears only after the expense is committed
+    renderHistory(); renderSummary(); renderStorageNote();
+    toast(wasEdit ? 'Expense updated' : 'Expense saved');
+  }, function(e){
+    setBusy(false);                 // the form keeps everything that was typed
+    saveFailed('This expense', e);
+  });
 }
 
 function editTx(id){
@@ -709,37 +1383,47 @@ function editTx(id){
   for (i = 0; i < list.length; i++) if (list[i].id === id) { t = list[i]; break; }
   if (!t) return;
   editingId = id;
+  editOrig = t;
   $('desc').value = t.desc;
   $('date').value = t.date;
   $('parties').value = t.parties;
+  entryCur = t.currency;
+  /* Keep the rate the expense was saved with, unless the home currency has changed since. */
+  entryRate = (t.home === HOME && t.currency !== HOME && t.rateToHome > 0)
+    ? { value: t.rateToHome, source: t.rateSource === 'manual' ? 'manual' : 'saved', date: t.rateDate }
+    : null;
   items = [];
   for (i = 0; i < t.items.length; i++) {
     items.push({ id: t.items[i].id || uid('it'), cat: t.items[i].cat || 'Other',
-                 amt: String(t.items[i].amt || ''), photo: t.items[i].photo || null });
+                 amt: String(t.items[i].amt || ''), photo: t.items[i].photo ? 'keep' : null });
   }
   if (!items.length) items = [blankItem()];
   $('saveBtn').textContent = 'Update';
   $('cancelEditBtn').style.display = 'block';
-  renderItems(); recalc();
+  renderCurBtn(); renderItems(); recalc();
   showPage('new');
 }
 
 function cancelEdit(keepQuiet){
   editingId = null;
+  editOrig = null;
+  entryRate = null;
+  entryCur = store('fp_lastcur') || HOME;
   $('desc').value = '';
   $('date').value = todayStr();
   $('parties').value = 2;
   items = [blankItem()];
   $('saveBtn').textContent = 'Save';
   $('cancelEditBtn').style.display = 'none';
-  renderItems(); recalc();
+  renderCurBtn(); renderItems(); recalc();
 }
 
 function deleteTx(id){
   if (!confirm('Delete this expense?')) return;
-  saveTxs(loadTxs().filter(function(t){ return t.id !== id; }));
-  renderHistory(); renderSummary();
-  toast('Deleted');
+  commit([opDeleteExpense(id)]).then(function(){
+    renderHistory(); renderSummary();
+    toast('Deleted');
+  }, function(e){ saveFailed('The delete', e); });
 }
 
 function toggleDetails(id, btn){
@@ -749,49 +1433,81 @@ function toggleDetails(id, btn){
   btn.textContent = open ? 'Hide' : 'Details';
 }
 
-/* ---------- payment details ---------- */
-function getPay(){
-  try { return JSON.parse(store('splitit_pay') || '{}') || {}; } catch(e){ return {}; }
+/* ---------- payment methods ---------- */
+/* Stored as { name, methods:[{label, value}] }. Split It's { name, etransfer, gcash } is
+   converted on read, so old settings and old backups carry over. */
+function normalizePay(p){
+  p = p || {};
+  if (Array.isArray(p.methods)) return { name: p.name || '', methods: p.methods.filter(function(m){ return m && m.value; }) };
+  var methods = [];
+  if (p.etransfer) methods.push({ label: 'Interac e-Transfer', value: p.etransfer });
+  if (p.gcash) methods.push({ label: 'GCash', value: p.gcash });
+  return { name: p.name || '', methods: methods };
 }
-function setPay(p){ store('splitit_pay', JSON.stringify(p)); }
-function hasPay(){ var p = getPay(); return !!(p.etransfer || p.gcash); }
-function savePayDetails(){
-  setPay({
-    name: ($('payName').value || '').trim(),
-    etransfer: ($('payEtransfer').value || '').trim(),
-    gcash: ($('payGcash').value || '').trim()
-  });
-  toast(hasPay() ? 'Payment details saved' : 'Payment details cleared');
-}
-function fillPayFields(){
+function getPay(){ return normalizePay(JSON.parse(JSON.stringify(cache.pay || {}))); }
+function payChange(p){ return [opSetPay(normalizePay(p))]; }
+function hasPay(){ return getPay().methods.length > 0; }
+function savePayName(){
   var p = getPay();
+  p.name = ($('payName').value || '').trim();
+  commit(payChange(p)).then(function(){ toast('Name saved'); },
+                            function(e){ renderPayList(); saveFailed('Your name', e); });
+}
+function addPayMethod(){
+  var label = ($('payLabel').value || '').trim();
+  var value = ($('payValue').value || '').trim();
+  if (!label || !value) { toast('Enter both the method and the account'); return; }
+  var p = getPay();
+  p.methods.push({ label: label.slice(0, 40), value: value.slice(0, 120) });
+  commit(payChange(p)).then(function(){
+    $('payLabel').value = ''; $('payValue').value = '';
+    renderPayList();
+    toast('Added ' + label);
+  }, function(e){ saveFailed('The payment method', e); });
+}
+function removePayMethod(i){
+  var p = getPay();
+  if (!p.methods[i]) return;
+  if (!confirm('Remove ' + p.methods[i].label + '?')) return;
+  p.methods.splice(i, 1);
+  commit(payChange(p)).then(renderPayList, function(e){ saveFailed('Removing the payment method', e); });
+}
+function renderPayList(){
+  var p = getPay(), h = '', i;
   $('payName').value = p.name || '';
-  $('payEtransfer').value = p.etransfer || '';
-  $('payGcash').value = p.gcash || '';
+  if (!p.methods.length) h = '<p class="note" style="text-align:left; margin:4px 0;">No payment methods yet.</p>';
+  for (i = 0; i < p.methods.length; i++) {
+    h += '<div class="paym"><div class="pl"><b>' + esc(p.methods[i].label) + '</b><span>' + esc(p.methods[i].value) + '</span></div>' +
+         '<button class="bi" type="button" onclick="removePayMethod(' + i + ')">Remove</button></div>';
+  }
+  $('payList').innerHTML = h;
 }
 function payBlock(){
-  var p = getPay(), lines = [];
-  if (p.gcash)     lines.push('  GCash (₱):       ' + p.gcash);
-  if (p.etransfer) lines.push('  e-Transfer (C$): ' + p.etransfer);
+  var p = getPay(), lines = [], i, w = 0;
+  for (i = 0; i < p.methods.length; i++) w = Math.max(w, p.methods[i].label.length + 1);
+  for (i = 0; i < p.methods.length; i++) lines.push('  ' + pad(p.methods[i].label + ':', w + 1) + p.methods[i].value);
   if (!lines.length) return '';
   return '\nSend your share to' + (p.name ? ' ' + p.name : '') + ':\n' + lines.join('\n');
 }
 
 /* ---------- sharing ---------- */
 function txMessage(c, includePay){
-  var L = [], i;
+  var L = [], i, cur = c.currency, foreign = cur !== c.home;
   L.push(c.desc + ' — ' + c.date);
   L.push('');
   for (i = 0; i < c.items.length; i++) {
-    L.push('  ' + pad(c.items[i].cat, 14) + fmtPHP(c.items[i].amt));
+    L.push('  ' + pad(c.items[i].cat, 14) + fmtMoney(c.items[i].amt, cur));
   }
-  L.push('  ' + pad('TOTAL', 14) + fmtPHP(c.amountPHP) + '  (≈ ' + fmtCAD(c.amountCAD) + ')');
+  L.push('  ' + pad('TOTAL', 14) + fmtMoney(c.amount, cur) + (foreign && c.amountHome > 0 ? '  (≈ ' + fmtMoney(c.amountHome, c.home) + ')' : ''));
   L.push('');
   L.push('Split ' + c.parties + ' way' + (c.parties > 1 ? 's' : '') + ': ' +
-         fmtPHP(c.eachPHP) + ' each  (≈ ' + fmtCAD(c.eachCAD) + ' each)');
+         fmtMoney(c.amount / c.parties, cur) + ' each' +
+         (foreign && c.amountHome > 0 ? '  (≈ ' + fmtMoney(c.amountHome / c.parties, c.home) + ' each)' : ''));
   if (includePay) { var pb = payBlock(); if (pb) L.push(pb); }
-  L.push('');
-  L.push('Rate: ₱1 = ' + Number(c.rate || rate).toFixed(5) + ' CAD');
+  if (foreign && c.rateToHome > 0) {
+    L.push('');
+    L.push('Rate: 1 ' + cur + ' = ' + fmtRate(c.rateToHome) + ' ' + c.home + (c.rateDate ? ' (' + c.rateDate + ')' : ''));
+  }
   return L.join('\n');
 }
 
@@ -807,6 +1523,12 @@ function dataURLtoFile(dataURL, name){
 }
 
 function shareText(text, files){
+  if (ShareP) {
+    var opts = { text: text };
+    if (files && files.length) opts.files = files;          // file URIs on the phone
+    ShareP.share(opts).catch(function(){});
+    return;
+  }
   if (navigator.share) {
     var payload = { text: text };
     if (files && files.length && navigator.canShare && navigator.canShare({ files: files })) payload.files = files;
@@ -831,8 +1553,8 @@ function openShareModal(c){
   $('incPay').checked = hasPay();
   $('incPay').disabled = !hasPay();
   $('payWarn').innerHTML = hasPay() ? '' :
-    '<div class="warnbox">No payment details saved yet. Add your e-Transfer email and GCash number ' +
-    'under <b>Summary → Where people can pay you</b> and they will be offered here every time.</div>';
+    '<div class="warnbox">No payment methods saved yet. Add them under ' +
+    '<b>Summary → Where people can pay you</b> and they will be offered here every time.</div>';
   refreshSharePreview();
   $('shareModal').style.display = 'block';
 }
@@ -843,20 +1565,28 @@ function closeShareModal(){
   $('shareModal').style.display = 'none';
   shareSubject = null;
 }
+/* The chosen receipt photos, ready for the share sheet: temporary file URIs on the
+   phone, File objects in a browser. */
 function shareFiles(){
-  var files = [], i;
-  if (!$('incPhoto').checked || !shareSubject) return files;
-  for (i = 0; i < shareSubject.items.length; i++) {
-    if (!shareSubject.items[i].photo) continue;
-    var f = dataURLtoFile(shareSubject.items[i].photo,
-      String(shareSubject.items[i].cat || 'receipt').toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-' + (i+1) + '.jpg');
-    if (f) files.push(f);
-  }
-  return files;
+  if (!$('incPhoto').checked || !shareSubject) return Promise.resolve([]);
+  var jobs = [];
+  shareSubject.items.forEach(function(it, i){
+    if (!it.photo) return;
+    var name = String(it.cat || 'receipt').toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-' + (i+1) + '.jpg';
+    var data = typeof it.photo === 'object' ? Promise.resolve(it.photo.full) : getPhoto(it.id);
+    jobs.push(data.then(function(d){
+      if (!d) return null;
+      if (ShareP && FS) return tempFile(name, d);
+      return dataURLtoFile(d, name);
+    }));
+  });
+  return Promise.all(jobs).then(function(a){ return a.filter(Boolean); });
 }
 function doShare(){
   if (!shareSubject) return;
-  shareText(txMessage(shareSubject, $('incPay').checked), shareFiles());
+  var text = txMessage(shareSubject, $('incPay').checked);
+  shareFiles().then(function(files){ shareText(text, files); },
+                    function(){ toast('Could not attach the photos'); shareText(text, []); });
   closeShareModal();
 }
 function copyShare(){
@@ -870,7 +1600,7 @@ function copyShare(){
 }
 function shareCurrent(){
   var c = currentInput();
-  if (!(c.amountPHP > 0)) { toast('Add a receipt with an amount first'); return; }
+  if (!(c.amount > 0)) { toast('Add a receipt with an amount first'); return; }
   if (!c.desc) c.desc = 'Expense';
   openShareModal(c);
 }
@@ -889,29 +1619,31 @@ function renderHistory(){
   }
   var h = '';
   list.forEach(function(t){
-    var chips = '', thumbs = '', det = '', i;
+    var chips = '', thumbs = '', det = '', i, cur = t.currency, foreign = cur !== HOME;
+    var hAmt = homeAmount(t), converted = t.home !== HOME;
     for (i = 0; i < t.items.length; i++) {
       var it = t.items[i];
-      chips += '<span class="chip">' + esc(it.cat) + ' · ' + fmtPHP(it.amt) + '</span>';
-      det += '<div class="line"><span>' + esc(it.cat) + '</span><b>' + fmtPHP(it.amt) + '</b></div>';
-      if (it.photo) thumbs += '<img class="tx-thumb" src="' + it.photo + '" alt="Receipt" onclick="viewPhoto(\'' + t.id + '\',' + i + ')">';
+      chips += '<span class="chip">' + esc(it.cat) + ' · ' + fmtMoney(it.amt, cur) + '</span>';
+      det += '<div class="line"><span>' + esc(it.cat) + '</span><b>' + fmtMoney(it.amt, cur) + '</b></div>';
+      if (it.photo) thumbs += '<img class="tx-thumb" data-rid="' + esc(it.id) + '" src="' + BLANK_IMG + '" alt="Receipt" onclick="viewPhoto(\'' + t.id + '\',' + i + ')">';
     }
     det += '<div class="rule"></div>';
-    det += '<div class="line"><span>Total</span><b>' + fmtPHP(t.amountPHP) + '</b></div>';
-    det += '<div class="line"><span>In Canadian dollars</span><b>' + fmtCAD(t.amountCAD) + '</b></div>';
+    det += '<div class="line"><span>Total</span><b>' + fmtMoney(t.amount, cur) + '</b></div>';
+    if (foreign) det += '<div class="line"><span>In ' + esc(curName(HOME)) + (converted ? ' (today’s rate)' : '') + '</span><b>' + fmtMoney(hAmt, HOME) + '</b></div>';
     det += '<div class="line"><span>Divided between</span><b>' + t.parties + ' ' + (t.parties === 1 ? 'person' : 'people') + '</b></div>';
-    det += '<div class="line"><span>Each person pays</span><b>' + fmtPHP(t.eachPHP) + '</b></div>';
-    det += '<div class="line"><span>Each person pays (C$)</span><b>' + fmtCAD(t.eachCAD) + '</b></div>';
-    det += '<div class="line"><span>Rate used</span><b>₱1 = ' + Number(t.rate || rate).toFixed(5) + '</b></div>';
+    det += '<div class="line"><span>Each person pays</span><b>' + fmtMoney(t.amount / t.parties, cur) + '</b></div>';
+    if (foreign) det += '<div class="line"><span>Each person pays (' + esc(HOME) + ')</span><b>' + fmtMoney(hAmt / t.parties, HOME) + '</b></div>';
+    if (cur !== t.home) det += '<div class="line"><span>Rate used</span><b>1 ' + esc(cur) + ' = ' + fmtRate(t.rateToHome) + ' ' + esc(t.home) + '</b></div>';
+    if (cur !== t.home) det += '<div class="line"><span>Rate source</span><b>' + esc(sourceLabel(t.rateSource === 'saved' ? 'saved' : t.rateSource, t.rateDate)) + '</b></div>';
 
     h += '<div class="tx-wrap">' +
       '<div class="tx"><div class="info">' +
         '<div class="desc">' + esc(t.desc) + '</div>' +
-        '<div class="meta">' + t.date + ' · ' + t.parties + ' people · ' + t.items.length + ' receipt' + (t.items.length === 1 ? '' : 's') + '</div>' +
+        '<div class="meta">' + esc(t.date) + ' · ' + t.parties + ' people · ' + t.items.length + ' receipt' + (t.items.length === 1 ? '' : 's') + '</div>' +
       '</div><div class="amts">' +
-        '<div class="php">' + fmtPHP(t.amountPHP) + '</div>' +
-        '<div class="cad">≈ ' + fmtCAD(t.amountCAD) + '</div>' +
-        '<div class="each-sm">' + fmtPHP(t.eachPHP) + ' each</div>' +
+        '<div class="php">' + fmtMoney(t.amount, cur) + '</div>' +
+        (foreign ? '<div class="cad">≈ ' + fmtMoney(hAmt, HOME) + '</div>' : '') +
+        '<div class="each-sm">' + fmtMoney(t.amount / t.parties, cur) + ' each</div>' +
       '</div></div>' +
       (chips ? '<div class="chips">' + chips + '</div>' : '') +
       (thumbs ? '<div class="thumbs">' + thumbs + '</div>' : '') +
@@ -924,30 +1656,33 @@ function renderHistory(){
       '</div></div>';
   });
   el.innerHTML = h;
+  fillThumbs();
 }
 
-/* ---------- summary ---------- */
+/* ---------- summary (home currency only — mixed currencies can't be added) ---------- */
 var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 function renderSummary(){
   var list = loadTxs();
   var el = $('summaryContent');
+  $('homeVal').innerHTML = '<b>' + esc(HOME) + '</b>' + esc(curName(HOME));
   if (!list.length) {
     el.innerHTML = '<div class="empty">Nothing to summarize yet.</div>';
     return;
   }
-  var byMonth = {}, byYear = {}, catByMonth = {}, catByYear = {};
+  var byMonth = {}, byYear = {}, catByMonth = {}, catByYear = {}, curByMonth = {}, curByYear = {};
   list.forEach(function(t){
     var ym = (t.date || '').slice(0,7), y = (t.date || '').slice(0,4), i;
     if (!y) return;
-    (byMonth[ym] = byMonth[ym] || {php:0, cad:0, n:0});
-    byMonth[ym].php += t.amountPHP; byMonth[ym].cad += t.amountCAD; byMonth[ym].n++;
-    (byYear[y] = byYear[y] || {php:0, cad:0, n:0});
-    byYear[y].php += t.amountPHP; byYear[y].cad += t.amountCAD; byYear[y].n++;
+    var hAmt = homeAmount(t), share = t.amount > 0 ? hAmt / t.amount : 0;
+    (byMonth[ym] = byMonth[ym] || {home:0, n:0}); byMonth[ym].home += hAmt; byMonth[ym].n++;
+    (byYear[y] = byYear[y] || {home:0, n:0}); byYear[y].home += hAmt; byYear[y].n++;
+    (curByMonth[ym] = curByMonth[ym] || {})[t.currency] = 1;
+    (curByYear[y] = curByYear[y] || {})[t.currency] = 1;
     catByMonth[ym] = catByMonth[ym] || {};
     catByYear[y] = catByYear[y] || {};
     for (i = 0; i < t.items.length; i++) {
-      var c = t.items[i].cat || 'Other', a = Number(t.items[i].amt) || 0;
+      var c = t.items[i].cat || 'Other', a = (Number(t.items[i].amt) || 0) * share;
       catByMonth[ym][c] = (catByMonth[ym][c] || 0) + a;
       catByYear[y][c] = (catByYear[y][c] || 0) + a;
     }
@@ -967,7 +1702,7 @@ function renderSummary(){
       var pct = max > 0 ? Math.max(2, Math.round(a[i][1] / max * 100)) : 2;
       h += '<div class="catrow">' +
         '<div class="catlabel"><span>' + esc(a[i][0]) + '</span>' +
-          '<span class="cv">' + fmtPHP(a[i][1]) + ' · ' + fmtCAD(a[i][1] * rate) + '</span></div>' +
+          '<span class="cv">' + fmtMoney(a[i][1], HOME) + '</span></div>' +
         '<div class="cattrack"><div class="catbar" style="width:' + pct + '%"></div></div>' +
       '</div>';
     }
@@ -979,35 +1714,34 @@ function renderSummary(){
     if (a.length > 3) parts.push('+' + (a.length - 3));
     return parts.join(' · ');
   }
+  function curList(obj){ return Object.keys(obj || {}).sort().join(', '); }
 
   var years = Object.keys(byYear).sort().reverse();
   var thisYear = years[0];
-
   var h = '';
 
-  /* by category — single series, one hue, sorted by magnitude */
-  h += '<div class="sum-section"><h2>' + thisYear + ' by category</h2>' +
+  h += '<div class="sum-section"><h2>' + thisYear + ' by category · ' + esc(HOME) + '</h2>' +
        '<div class="card">' + bars(catByYear[thisYear]) + '</div></div>';
 
-  /* by month */
   var mk = Object.keys(byMonth).sort().reverse();
   h += '<div class="sum-section"><h2>By month</h2><table class="sum">' +
-       '<tr><th>Period</th><th>#</th><th>PHP</th><th>CAD</th></tr>';
+       '<tr><th>Period</th><th>#</th><th>' + esc(HOME) + '</th></tr>';
   mk.forEach(function(k){
     var v = byMonth[k];
     h += '<tr><td>' + MONTHS[parseInt(k.slice(5,7),10)-1] + ' ' + k.slice(0,4) +
-         '<span class="msub">' + leadCats(catByMonth[k]) + '</span></td>' +
-         '<td>' + v.n + '</td><td>' + fmtPHP(v.php) + '</td><td>' + fmtCAD(v.cad) + '</td></tr>';
+         '<span class="msub">' + leadCats(catByMonth[k]) + '</span>' +
+         '<span class="msub">Paid in ' + esc(curList(curByMonth[k])) + '</span></td>' +
+         '<td>' + v.n + '</td><td>' + fmtMoney(v.home, HOME) + '</td></tr>';
   });
   h += '</table></div>';
 
-  /* by year */
   h += '<div class="sum-section"><h2>By year</h2><table class="sum">' +
-       '<tr><th>Period</th><th>#</th><th>PHP</th><th>CAD</th></tr>';
+       '<tr><th>Period</th><th>#</th><th>' + esc(HOME) + '</th></tr>';
   years.forEach(function(k){
     var v = byYear[k];
-    h += '<tr><td>' + k + '<span class="msub">' + leadCats(catByYear[k]) + '</span></td>' +
-         '<td>' + v.n + '</td><td>' + fmtPHP(v.php) + '</td><td>' + fmtCAD(v.cad) + '</td></tr>';
+    h += '<tr><td>' + k + '<span class="msub">' + leadCats(catByYear[k]) + '</span>' +
+         '<span class="msub">Paid in ' + esc(curList(curByYear[k])) + '</span></td>' +
+         '<td>' + v.n + '</td><td>' + fmtMoney(v.home, HOME) + '</td></tr>';
   });
   h += '</table></div>';
 
@@ -1015,26 +1749,62 @@ function renderSummary(){
 }
 
 /* ---------- backup & restore ---------- */
+function markBackedUp(){
+  commit([opSetting('fp_lastbackup', todayStr())]).then(renderStorageNote, function(){});
+}
+function daysSince(d){ return d ? Math.floor((Date.parse(todayStr()) - Date.parse(d)) / 86400000) : null; }
+/* The line under the New tab: a storage problem first, else a backup reminder. */
+function renderStorageNote(){
+  var el = $('storageNote'), n = loadTxs().length, last = store('fp_lastbackup'), d = daysSince(last);
+  el.style.color = '';
+  if (storageBlocked) { el.textContent = '⚠︎ ' + storageBlocked; el.style.color = 'var(--red)'; return; }
+  if (!storageOK) { el.textContent = 'Note: this browser won’t keep your data after it closes.'; return; }
+  if (n && (d === null ? n >= 5 : d >= 30)) {
+    el.textContent = (d === null ? 'You haven’t saved a backup yet.' : 'Your last backup was ' + d + ' days ago.') +
+      ' Summary → Save backup keeps a copy outside the app.';
+    return;
+  }
+  el.textContent = '';
+}
 function exportBackup(){
   var list = loadTxs();
   if (!list.length) { toast('Nothing to back up yet'); return; }
-  var payload = JSON.stringify({
-    app: 'split-it', version: 2, exported: new Date().toISOString(),
-    txs: list, cats: getCats(), pay: getPay()
+  toast('Preparing backup…');
+  var jobs = [];
+  list.forEach(function(t){
+    t.items.forEach(function(it){
+      if (it.photo) jobs.push(getPhoto(it.id).then(function(d){ it.photo = d || null; }));
+      else it.photo = null;
+    });
   });
-  var blob = new Blob([payload], { type: 'application/json' });
-  var file = new File([blob], 'fairpot-backup.json', { type: 'application/json' });
-  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-    navigator.share({ files: [file] })
-      .then(function(){ toast('Backup shared — choose “Save to Files”'); })
-      .catch(function(){});
-  } else {
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'fairpot-backup.json';
-    document.body.appendChild(a); a.click(); a.remove();
-    toast('Backup downloaded');
-  }
+  Promise.all(jobs).then(function(){
+    var payload = JSON.stringify({
+      app: 'fairpot', version: 3, exported: new Date().toISOString(),
+      home: HOME, txs: list, cats: getCats(), pay: getPay()
+    });
+    var name = 'fairpot-backup-' + todayStr() + '.json';
+    if (isNative && ShareP) {
+      return FS.writeFile({ path: name, directory: 'CACHE', encoding: 'utf8', data: payload })
+        .then(function(){ return FS.getUri({ path: name, directory: 'CACHE' }); })
+        .then(function(r){ return ShareP.share({ title: 'Fairpot backup', files: [r.uri] }); })
+        .then(function(){ markBackedUp(); toast('Backup ready'); })
+        .catch(function(){});
+    }
+    var blob = new Blob([payload], { type: 'application/json' });
+    var file = new File([blob], name, { type: 'application/json' });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file] })
+        .then(function(){ markBackedUp(); toast('Backup shared — choose “Save to Files”'); })
+        .catch(function(){});
+    } else {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      markBackedUp();
+      toast('Backup downloaded');
+    }
+  }).catch(function(){ toast('Could not prepare the backup'); });
 }
 
 $('restoreInput').addEventListener('change', function(){
@@ -1045,17 +1815,37 @@ $('restoreInput').addEventListener('change', function(){
   reader.onload = function(){
     try {
       var data = JSON.parse(reader.result);
-      var txs = (data && data.app === 'split-it' && Array.isArray(data.txs)) ? data.txs : null;
-      if (!txs) { toast('That doesn’t look like a Fairpot or Split It backup'); return; }
+      var ok = data && (data.app === 'split-it' || data.app === 'fairpot') && Array.isArray(data.txs);
+      if (!ok) { toast('That doesn’t look like a Fairpot or Split It backup'); return; }
+      var txs = data.txs;
       var existing = loadTxs();
       if (existing.length && !confirm('Replace your current ' + existing.length + ' expense(s) with the ' + txs.length + ' from this backup?')) return;
       for (var i = 0; i < txs.length; i++) txs[i] = migrate(txs[i]);
-      saveTxs(txs);
-      if (data.cats && data.cats.length) saveCats(data.cats);
-      if (data.pay) { setPay(data.pay); fillPayFields(); }
-      renderCatManager(); renderItems();
-      renderHistory(); renderSummary();
-      toast('Restored ' + txs.length + ' expense(s)');
+      toast('Restoring…');
+      /* Thumbnails are made first; then expenses, receipts, photos, categories and payment
+         methods are replaced in ONE transaction — all of it, or none of it. */
+      var photos = {}, jobs = [];
+      txs.forEach(function(t){
+        t.items.forEach(function(it){
+          if (!it.id) it.id = uid('it');
+          if (it.photo && String(it.photo).indexOf('data:') === 0) {
+            var full = it.photo;
+            jobs.push(makeThumbP(full).then(function(th){ photos[it.id] = { thumb: th, full: full }; }));
+          }
+          delete it.photo;
+        });
+      });
+      Promise.all(jobs).then(function(){
+        return commit([opReplaceAll(txs, data.cats && data.cats.length ? sortCats(data.cats) : null,
+                                    data.pay ? normalizePay(data.pay) : null, photos)]);
+      }).then(function(){
+        thumbCache = {};
+        renderAll();
+        renderStorageNote();
+        toast('Restored ' + txs.length + ' expense(s)');
+      }, function(e){
+        saveFailed('The restore', e);
+      });
     } catch(e){ toast('Could not read that backup file'); }
   };
   reader.onerror = function(){ toast('Could not read that backup file'); };
@@ -1071,26 +1861,33 @@ function showPage(name){
   $('pageTitle').textContent =
     name === 'new' ? 'Fairpot' : name === 'history' ? 'History' : 'Summary';
   if (name === 'history') renderHistory();
-  if (name === 'summary') { renderSummary(); renderCatManager(); fillPayFields(); }
+  if (name === 'summary') { renderSummary(); renderCatManager(); renderPayList(); }
   window.scrollTo(0, 0);
 }
 
-/* ---------- init ---------- */
+function renderAll(){
+  renderCurBtn(); renderItems(); recalc();
+  renderHistory(); renderSummary(); renderCatManager(); renderPayList();
+}
+
+/* ---------- start-up ---------- */
 $('date').value = todayStr();
 $('parties').addEventListener('input', recalc);
-items = [blankItem()];
-renderItems();
-renderCatManager();
-fillPayFields();
-if (!storageOK) {
-  $('storageNote').textContent =
-    'Note: storage is unavailable right now, so history won’t survive closing the app.';
-}
+$('date').addEventListener('change', recalc);
+$('date').addEventListener('input', recalc);
 $('versionNote').textContent = 'Fairpot v' + APP_VERSION;
-recalc();
-renderHistory();
-renderSummary();
 
+function boot(){
+  HOME = store('fp_home') || 'CAD';
+  loadStoredRates();
+  entryCur = store('fp_lastcur') || HOME;
+  items = [blankItem()];
+  renderAll();
+  renderStorageNote();
+  if (storageBlocked) alert(storageBlocked);
+  refreshRates();
+}
+openStorage().then(boot, boot);
 </script>
 </body>
 </html>
