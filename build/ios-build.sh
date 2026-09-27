@@ -151,6 +151,9 @@ xcodebuild archive \
   -archivePath "$TMP/App.xcarchive" \
   "${AUTH[@]}" \
   DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+  CODE_SIGN_STYLE=Automatic \
+  CODE_SIGN_IDENTITY="Apple Distribution" \
+  PROVISIONING_PROFILE_SPECIFIER="" \
   MARKETING_VERSION="$VERSION" \
   CURRENT_PROJECT_VERSION="$BUILD" \
   -quiet
