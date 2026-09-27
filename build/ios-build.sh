@@ -84,6 +84,64 @@ AUTH=(-allowProvisioningUpdates
       -authenticationKeyID "$ASC_KEY_ID"
       -authenticationKeyIssuerID "$ASC_ISSUER_ID")
 
+echo "--- Verify App Store Connect authentication"
+KEY="$KEY" node <<'NODE'
+const crypto = require('node:crypto');
+const fs = require('node:fs');
+const https = require('node:https');
+
+const encode = value => Buffer.from(JSON.stringify(value)).toString('base64url');
+const now = Math.floor(Date.now() / 1000);
+const unsigned = [
+  encode({ alg: 'ES256', kid: process.env.ASC_KEY_ID, typ: 'JWT' }),
+  encode({
+    iss: process.env.ASC_ISSUER_ID,
+    iat: now,
+    exp: now + 300,
+    aud: 'appstoreconnect-v1'
+  })
+].join('.');
+
+let signature;
+try {
+  signature = crypto.sign('sha256', Buffer.from(unsigned), {
+    key: fs.readFileSync(process.env.KEY),
+    dsaEncoding: 'ieee-p1363'
+  }).toString('base64url');
+} catch {
+  console.error('Apple API preflight failed: ASC_KEY_P8 is not a readable private key.');
+  process.exit(2);
+}
+
+const token = unsigned + '.' + signature;
+https.get('https://api.appstoreconnect.apple.com/v1/apps?limit=1', {
+  headers: { Authorization: 'Bearer ' + token }
+}, response => {
+  let body = '';
+  response.setEncoding('utf8');
+  response.on('data', chunk => { body += chunk; });
+  response.on('end', () => {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      console.log('Apple API preflight passed: credentials accepted (HTTP ' + response.statusCode + ').');
+      return;
+    }
+    console.error('Apple API preflight failed: HTTP ' + response.statusCode + '.');
+    try {
+      const parsed = JSON.parse(body);
+      for (const error of parsed.errors || []) {
+        console.error((error.code || 'APPLE_ERROR') + ': ' + (error.title || error.detail || 'Authentication rejected.'));
+      }
+    } catch {
+      console.error('Apple returned a non-JSON error response.');
+    }
+    process.exitCode = 3;
+  });
+}).on('error', error => {
+  console.error('Apple API preflight request failed: ' + error.message);
+  process.exitCode = 4;
+});
+NODE
+
 echo "--- Build and sign"
 xcodebuild archive \
   -project ios/App/App.xcodeproj \
