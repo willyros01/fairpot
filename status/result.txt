@@ -1,7 +1,7 @@
-Fairpot build 10 — checking App Store Connect
-2026-10-01T19:03:31.787Z  not visible yet
-2026-10-01T19:04:32.439Z  version 0.5.1  processing VALID  expired false  encryption-answered true  internal IN_BETA_TESTING  external READY_FOR_BETA_SUBMISSION
+Fairpot build 11 — checking App Store Connect
+2026-10-01T20:01:14.810Z  not visible yet
+2026-10-01T20:02:15.385Z  version 0.5.2  processing VALID  expired false  encryption-answered true  internal IN_BETA_TESTING  external READY_FOR_BETA_SUBMISSION
 "What to Test" filled.
-Group "Me": HTTP 422 [{"id":"6ebb27ad-8d43-4623-9656-78c058475447","status":"422","code":"ENTITY_UNPROCESSABLE","title":"Builds cannot be assigned to this internal group.","detail":"Cannot add internal group to a build."}]
+Group "Me": HTTP 422 [{"id":"3b6af5f1-3288-400c-894c-5cbe1de017b7","status":"422","code":"ENTITY_UNPROCESSABLE","title":"Builds cannot be assigned to this internal group.","detail":"Cannot add internal group to a build."}]
 After: internal IN_BETA_TESTING  external READY_FOR_BETA_SUBMISSION
 RESULT: VALID
