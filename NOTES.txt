@@ -119,6 +119,15 @@ Version history
     Tested: 19 browser checks (gate, decline, failed save stays locked, accept,
     restart, read-only view, payment field). No page errors.
 
+  v0.5.1 (Oct 1, 2026) — User Guide link.
+    Summary screen: Help card with "Open the User Guide", which opens
+    www.cuberoot-systems.com/fairpot/guide/ (links to the User Guide and Quick Start
+    PDFs in the Cuberoot library, folder guides/split-it).
+    Build script now sets ITSAppUsesNonExemptEncryption = NO (only HTTPS through iOS),
+    so new builds no longer stop at Missing Export Compliance.
+    TestFlight status check: change status/request.txt to check a build; the result
+    is saved on the ci-logs branch (status/result.txt).
+
 Notes
   The workflow file in the repo is named iOS-testflight.yml (capital iOS). It
   works as is. It is NOT included in this zip, so it can't be duplicated.
