@@ -128,6 +128,11 @@ Version history
     TestFlight status check: change status/request.txt to check a build; the result
     is saved on the ci-logs branch (status/result.txt).
 
+  v0.5.2 (Oct 1, 2026) — contact email.
+    Contact in the Terms of Use, terms.html, privacy.html and the guides is now
+    willyros01@gmail.com (was the GitHub issues page, which needs a GitHub account).
+    Terms stay version 1: only the contact line changed, no new acceptance needed.
+
 Notes
   The workflow file in the repo is named iOS-testflight.yml (capital iOS). It
   works as is. It is NOT included in this zip, so it can't be duplicated.

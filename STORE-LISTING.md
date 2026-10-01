@@ -22,7 +22,7 @@ Everything App Store Connect asks for, ready to copy. Character limits are Apple
 | Field | Value |
 |---|---|
 | Privacy Policy URL | https://willyros01.github.io/fairpot/privacy.html |
-| Support URL | https://github.com/willyros01/fairpot/issues |
+| Support URL | https://www.cuberoot-systems.com/fairpot/guide/ (contact: willyros01@gmail.com) |
 | Marketing URL (optional) | https://willyros01.github.io/fairpot/ |
 
 ## Promotional text (170)
