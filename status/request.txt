@@ -1,0 +1,3 @@
+Ask for a TestFlight status check by changing the build number below and pushing.
+The result is saved on the ci-logs branch as status/result.txt.
+build = 9

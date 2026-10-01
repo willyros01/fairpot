@@ -1,0 +1,48 @@
+# Fairpot — read-only TestFlight status check.
+# Runs when status/request.txt changes. Asks App Store Connect for the build's
+# processing state and saves the answer on the ci-logs branch (status/result.txt).
+name: TestFlight status check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "status/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: testflight-status
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Ask App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: node status/check.mjs
+      - name: Save result to ci-logs branch
+        if: always()
+        run: |
+          cp status/result.txt "$RUNNER_TEMP/result.txt" 2>/dev/null || echo "no result file" > "$RUNNER_TEMP/result.txt"
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          rm -f status/result.txt
+          git fetch origin ci-logs && git checkout ci-logs || git checkout --orphan ci-logs
+          git rm -rq --cached . >/dev/null 2>&1 || true
+          mkdir -p status && cp "$RUNNER_TEMP/result.txt" status/result.txt
+          git add status/result.txt
+          git commit -m "TestFlight status: run ${{ github.run_number }}"
+          git push origin ci-logs
+      - name: Fail if Apple rejected the build
+        run: 'grep -q "RESULT: VALID" "$RUNNER_TEMP/result.txt"'
