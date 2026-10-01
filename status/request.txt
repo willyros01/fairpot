@@ -1,3 +1,4 @@
 Ask for a TestFlight status check by changing the build number below and pushing.
 The result is saved on the ci-logs branch as status/result.txt.
 build = 9
+whatToTest = Version 0.5.0. Please check: 1) First launch shows the Terms of Use; Decline keeps the app locked, Accept unlocks it. 2) Settings: add a payment method and hold backspace in both fields. 3) iPad: pinch to zoom in, then pinch to zoom back out.
