@@ -1,3 +1,7 @@
 Fairpot build 9 — checking App Store Connect
-2026-10-01T18:30:04.476Z  version 0.5.0  processing VALID  expired false  encryption-answered false  internal MISSING_EXPORT_COMPLIANCE  external MISSING_EXPORT_COMPLIANCE
+2026-10-01T18:30:57.381Z  version 0.5.0  processing VALID  expired false  encryption-answered false  internal MISSING_EXPORT_COMPLIANCE  external MISSING_EXPORT_COMPLIANCE
+Export compliance answered: only exempt encryption.
+"What to Test" filled.
+Group "Me": HTTP 422 [{"id":"8e359ebf-d0f2-4d87-8b05-3b52cfdec287","status":"422","code":"ENTITY_UNPROCESSABLE","title":"Builds cannot be assigned to this internal group.","detail":"Cannot add internal group to a build."}]
+After: internal IN_BETA_TESTING  external READY_FOR_BETA_SUBMISSION
 RESULT: VALID
