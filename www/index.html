@@ -143,6 +143,9 @@
   .catlabel .cv{color:var(--sub); font-variant-numeric:tabular-nums; white-space:nowrap;}
   .cattrack{height:8px; border-radius:4px; background:var(--track); overflow:hidden;}
   .catbar{height:8px; border-radius:4px; background:var(--bar); min-width:4px;}
+  .paysug{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;}
+  .paysug button{border:none; background:var(--accent-soft); color:var(--accent); font-size:15px; font-weight:600;
+    padding:8px 12px; border-radius:18px; cursor:pointer;}
   .catman{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); font-size:15px;}
   .catman:last-child{border-bottom:none;}
   .catman span.n{flex:1;}
@@ -173,6 +176,23 @@
   .toast.show{opacity:1;}
   .note{font-size:12px; color:var(--sub); text-align:center; margin-top:10px;}
 
+  /* terms of use (v0.5.0) — large text, shown full screen on first use */
+  body.locked header, body.locked main, body.locked nav{display:none !important;}
+  #termsGate{display:none; position:fixed; inset:0; z-index:300; background:var(--bg); overflow:auto;
+    -webkit-overflow-scrolling:touch; padding:calc(20px + env(safe-area-inset-top)) 16px calc(30px + env(safe-area-inset-bottom));}
+  #termsGate .tg{max-width:680px; margin:0 auto; font-size:19px; line-height:1.55;}
+  #termsGate h1{font-size:30px; margin:0 0 4px;}
+  #termsGate h2{font-size:21px; margin:22px 0 6px;}
+  #termsGate .tbox h2:first-child{margin-top:0;}
+  #termsGate p{margin:0 0 10px;}
+  #termsGate .tsub{color:var(--sub);}
+  #termsGate .tbox{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin:16px 0;}
+  #termsGate .tagree{display:flex; align-items:flex-start; gap:14px; font-size:20px; font-weight:600; cursor:pointer; margin:18px 0 8px;}
+  #termsGate .tagree input{width:30px; height:30px; flex:0 0 auto; margin-top:2px; accent-color:var(--accent);}
+  #termsGate .btnrow button{font-size:20px; padding:16px;}
+  #termsGate button.primary:disabled{opacity:.4;}
+  #termsGate a{color:var(--accent);}
+  #termsDeclined{display:none;}
   /* modals */
   .modal{display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:150; overflow:auto; -webkit-overflow-scrolling:touch;}
   .modal .card{max-width:480px; margin:40px auto; margin-top:calc(30px + env(safe-area-inset-top));}
@@ -314,12 +334,9 @@
       <label>Payment methods</label>
       <div id="payList"></div>
       <label for="payLabel">Add a method</label>
-      <input type="text" id="payLabel" list="payLabels" placeholder="e.g. Interac e-Transfer, GCash, PayPal" autocomplete="off">
+      <input type="text" id="payLabel" placeholder="e.g. Interac e-Transfer, GCash, PayPal" autocomplete="off" autocorrect="off" spellcheck="false">
+      <div class="paysug" id="paySug"></div>
       <input type="text" id="payValue" placeholder="Email, phone number or account" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:8px;">
-      <datalist id="payLabels">
-        <option value="Interac e-Transfer"><option value="GCash"><option value="Maya"><option value="PayPal">
-        <option value="Wise"><option value="Revolut"><option value="Venmo"><option value="Zelle"><option value="Bank transfer">
-      </datalist>
       <div class="btnrow">
         <button class="primary" type="button" onclick="addPayMethod()">Add payment method</button>
       </div>
@@ -350,6 +367,14 @@
       <input type="file" id="restoreInput" accept=".json,application/json" style="display:none">
       <p class="note" id="versionNote" style="margin-top:12px;"></p>
     </div>
+
+    <div class="card" style="margin-top:14px;">
+      <label style="margin-top:0;">Terms of use</label>
+      <p class="note" id="termsNote" style="text-align:left; margin:4px 0 12px;"></p>
+      <div class="btnrow" style="margin-top:0;">
+        <button class="secondary" type="button" onclick="termsView()">Read the terms</button>
+      </div>
+    </div>
   </section>
 </main>
 
@@ -374,6 +399,59 @@
 <input type="file" id="photoInput" accept="image/*" style="display:none">
 
 <!-- SHARE MODAL -->
+<div id="termsGate" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+  <div class="tg">
+    <div id="termsMain">
+      <h1 id="termsTitle">Fairpot Terms of Use</h1>
+      <p class="tsub" id="termsSub"></p>
+      <div id="termsAsk"><p><b>Please read these terms. You must accept them to use Fairpot.</b></p></div>
+      <div class="tbox" id="termsText">
+<!--TERMS-START-->
+<h2>1. Who provides Fairpot</h2>
+<p>Fairpot is provided by Wilfredo Rosales, an individual developer (&ldquo;we&rdquo;, &ldquo;us&rdquo;). These terms are an agreement between you and us.</p>
+<h2>2. A free app</h2>
+<p>Fairpot is free. There are no fees, subscriptions, advertising or in-app purchases.</p>
+<h2>3. Provided &ldquo;as is&rdquo;</h2>
+<p>Fairpot is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo;, without any warranty or condition of any kind, express or implied, including any warranty of merchantability, fitness for a particular purpose, accuracy or non-infringement. We do not promise that Fairpot will be free of errors, will always work, or will never lose data.</p>
+<h2>4. You check the numbers</h2>
+<p>Fairpot is a calculator that helps you split shared costs. Exchange rates come from a free third-party service and may be late, wrong or unavailable. You are responsible for checking every amount, exchange rate and split before you rely on it or share it, and for any money you ask for, send or receive. Fairpot does not move money and is not a party to any arrangement between you and other people.</p>
+<h2>5. Your data and backups</h2>
+<p>Fairpot collects no personal information. Your data is kept only on your device. You are responsible for keeping your own backups (Save backup, on the Summary screen). Data that is not backed up is lost if you delete the app or lose your device.</p>
+<h2>6. No liability</h2>
+<p>To the fullest extent permitted by law, we accept no liability of any kind for any loss or damage arising from your use of Fairpot or your inability to use it. This includes lost money, lost data, wrong calculations or exchange rates, disputes between people, and any direct, indirect, incidental, special or consequential damages, even if we were told such loss was possible. You use Fairpot entirely at your own risk.</p>
+<h2>7. Your rights under the law</h2>
+<p>Some places do not allow certain warranties or liabilities to be excluded. Where that is the case, the exclusions in these terms apply only as far as the law allows. Nothing in these terms takes away rights you have by law that cannot be given up.</p>
+<h2>8. Apple</h2>
+<p>These terms are between you and us, not Apple. Apple is not responsible for Fairpot or its content, has no obligation to provide maintenance or support for it, and is not responsible for any claim relating to it. Apple and its subsidiaries are third-party beneficiaries of these terms and may enforce them. Apple&rsquo;s Licensed Application End User License Agreement also applies to your use of Fairpot.</p>
+<h2>9. Changes to these terms</h2>
+<p>We may change these terms in a later version of Fairpot. If we do, Fairpot will show you the new terms and ask you to accept them before you can continue using it.</p>
+<h2>10. Governing law</h2>
+<p>These terms are governed by the laws of the Province of Ontario and the federal laws of Canada that apply there, except where the law of the place you live requires otherwise.</p>
+<h2>11. Contact</h2>
+<p>Questions about Fairpot or these terms: github.com/willyros01/fairpot/issues</p>
+<!--TERMS-END-->
+      </div>
+      <div id="termsAccept">
+        <label class="tagree" for="termsCheck"><input type="checkbox" id="termsCheck" onchange="termsTick()"> I have read and agree to the Fairpot Terms of Use.</label>
+        <p class="tsub">By tapping Accept, you agree to these terms. If you decline, Fairpot stays locked.</p>
+        <div class="btnrow">
+          <button class="secondary" type="button" onclick="termsDecline()">Decline</button>
+          <button class="primary" type="button" id="termsAcceptBtn" onclick="termsAccept()" disabled>Accept</button>
+        </div>
+      </div>
+      <div id="termsClose" style="display:none;">
+        <div class="btnrow"><button class="primary" type="button" onclick="termsCloseView()">Close</button></div>
+      </div>
+    </div>
+    <div id="termsDeclined">
+      <h1>Fairpot is locked</h1>
+      <p>You declined the Terms of Use. Fairpot cannot be used unless you accept them.</p>
+      <p>You can close the app now. If you change your mind, tap the button below to read the terms again.</p>
+      <div class="btnrow"><button class="primary" type="button" onclick="termsShowGate()">Read the terms again</button></div>
+    </div>
+  </div>
+</div>
+
 <div id="shareModal" class="modal">
   <div class="card">
     <h2>Share this split</h2>
@@ -408,7 +486,7 @@
 <script>
 'use strict';
 
-var APP_VERSION = '0.4.0';
+var APP_VERSION = '0.5.0';
 
 /* ======================================================================
    STORAGE — SQLite on the phone, one transaction per change
@@ -1472,6 +1550,16 @@ function removePayMethod(i){
   p.methods.splice(i, 1);
   commit(payChange(p)).then(renderPayList, function(e){ saveFailed('Removing the payment method', e); });
 }
+/* Common method names as tap-to-fill buttons. (v0.5.0: replaces a <datalist>, whose
+   iOS suggestion bar made the backspace key stop after one character.) */
+var PAY_SUGGEST = ['Interac e-Transfer','GCash','Maya','PayPal','Wise','Revolut','Venmo','Zelle','Bank transfer'];
+function renderPaySug(){
+  var h = '', i;
+  for (i = 0; i < PAY_SUGGEST.length; i++)
+    h += '<button type="button" onclick="pickPayLabel(' + i + ')">' + esc(PAY_SUGGEST[i]) + '</button>';
+  $('paySug').innerHTML = h;
+}
+function pickPayLabel(i){ $('payLabel').value = PAY_SUGGEST[i]; $('payValue').focus(); }
 function renderPayList(){
   var p = getPay(), h = '', i;
   $('payName').value = p.name || '';
@@ -1877,7 +1965,70 @@ $('date').addEventListener('change', recalc);
 $('date').addEventListener('input', recalc);
 $('versionNote').textContent = 'Fairpot v' + APP_VERSION;
 
+/* ---------- terms of use (v0.5.0) ----------
+   Fairpot stays locked until the current terms are accepted. The acceptance is a normal
+   commit: it counts only once it is written to storage and read back; otherwise the app
+   stays locked and says why. Stored as setting fp_terms = {"v":TERMS_VERSION,"at":ISO time,"app":version}. */
+var TERMS_VERSION = '1';
+var TERMS_DATE = 'October 1, 2026';
+function termsRecord(){
+  try { var t = JSON.parse(store('fp_terms') || 'null'); return t && t.v === TERMS_VERSION ? t : null; }
+  catch (e) { return null; }
+}
+function termsShowGate(){
+  $('termsSub').textContent = 'Version ' + TERMS_VERSION + ' \u00b7 Effective ' + TERMS_DATE;
+  $('termsAsk').style.display = ''; $('termsAccept').style.display = ''; $('termsClose').style.display = 'none';
+  $('termsMain').style.display = ''; $('termsDeclined').style.display = 'none';
+  $('termsCheck').checked = false; termsTick();
+  document.body.classList.add('locked');
+  $('termsGate').style.display = 'block'; $('termsGate').scrollTop = 0;
+}
+function termsTick(){ $('termsAcceptBtn').disabled = !$('termsCheck').checked; }
+function termsDecline(){
+  $('termsMain').style.display = 'none'; $('termsDeclined').style.display = 'block';
+  $('termsGate').scrollTop = 0;
+}
+function termsAccept(){
+  if (!$('termsCheck').checked) return;
+  var btn = $('termsAcceptBtn');
+  var rec = { v: TERMS_VERSION, at: new Date().toISOString(), app: APP_VERSION };
+  btn.disabled = true; btn.textContent = 'Saving\u2026';
+  commit([opSetting('fp_terms', JSON.stringify(rec))]).then(function(){
+    var back = termsRecord();
+    if (!back || back.at !== rec.at) throw new Error('The saved acceptance could not be read back.');
+    btn.textContent = 'Accept';
+    $('termsGate').style.display = 'none';
+    document.body.classList.remove('locked');
+    start();
+  }).catch(function(e){
+    btn.textContent = 'Accept'; termsTick();
+    alert('Your acceptance was NOT saved.\n\n' + ((e && e.message) || 'Storage error') +
+          '\n\nFairpot stays locked. Please try again.');
+  });
+}
+function termsView(){
+  $('termsSub').textContent = 'Version ' + TERMS_VERSION + ' \u00b7 Effective ' + TERMS_DATE;
+  $('termsAsk').style.display = 'none'; $('termsAccept').style.display = 'none'; $('termsClose').style.display = '';
+  $('termsMain').style.display = ''; $('termsDeclined').style.display = 'none';
+  document.body.classList.add('locked');
+  $('termsGate').style.display = 'block'; $('termsGate').scrollTop = 0;
+}
+function termsCloseView(){
+  $('termsGate').style.display = 'none';
+  document.body.classList.remove('locked');
+}
+function renderTermsNote(){
+  var t = termsRecord();
+  $('termsNote').textContent = t ? 'You accepted version ' + t.v + ' on ' +
+    new Date(t.at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) + '.' : '';
+}
+
 function boot(){
+  if (!termsRecord()) { termsShowGate(); return; }
+  start();
+}
+function start(){
+  renderPaySug(); renderTermsNote();
   HOME = store('fp_home') || 'CAD';
   loadStoredRates();
   entryCur = store('fp_lastcur') || HOME;

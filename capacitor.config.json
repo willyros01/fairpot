@@ -3,7 +3,8 @@
   "appName": "Fairpot",
   "webDir": "www",
   "ios": {
-    "contentInset": "never"
+    "contentInset": "never",
+    "zoomEnabled": true
   },
   "plugins": {
     "CapacitorSQLite": {

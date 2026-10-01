@@ -101,6 +101,24 @@ Version history
     methods, backup with photos, all-or-nothing restore, Split It import, integrity
     failure). All pass, no page errors.
 
+  v0.5.0 (Oct 1, 2026) — fixes and Terms of Use, for App Store submission.
+    Add payment method: backspace stopped after one character. Cause: the method
+    field used a browser suggestion list (datalist), whose iOS suggestion bar
+    interrupts the delete key. Replaced by tap-to-fill buttons under the field.
+    iPad zoom: once enlarged it could not be zoomed back out. Capacitor turns
+    pinch-zoom off by default; ios.zoomEnabled is now true in capacitor.config.json,
+    so pinch works both ways.
+    Terms of Use on first use (version 1, effective Oct 1, 2026): full-screen, large
+    text; Accept works only after ticking "I have read and agree"; Decline keeps the
+    app locked (nothing starts, not even the rate download). The acceptance is a
+    normal commit (setting fp_terms = version, time, app version) read back before
+    the app unlocks; if it can't be saved, a dialog says so and the app stays locked.
+    Summary screen: "Terms of use" card with the accepted date and Read the terms.
+    A new terms version (TERMS_VERSION) asks everyone to accept again.
+    terms.html in the repo root has the same text, for a web link if needed.
+    Tested: 19 browser checks (gate, decline, failed save stays locked, accept,
+    restart, read-only view, payment field). No page errors.
+
 Notes
   The workflow file in the repo is named iOS-testflight.yml (capital iOS). It
   works as is. It is NOT included in this zip, so it can't be duplicated.
