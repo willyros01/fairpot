@@ -143,6 +143,8 @@
   .catlabel .cv{color:var(--sub); font-variant-numeric:tabular-nums; white-space:nowrap;}
   .cattrack{height:8px; border-radius:4px; background:var(--track); overflow:hidden;}
   .catbar{height:8px; border-radius:4px; background:var(--bar); min-width:4px;}
+  a.guidebtn{display:block; text-align:center; text-decoration:none; padding:14px; font-size:16px; font-weight:600;
+    border-radius:12px; background:var(--accent); color:#fff;}
   .paysug{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;}
   .paysug button{border:none; background:var(--accent-soft); color:var(--accent); font-size:15px; font-weight:600;
     padding:8px 12px; border-radius:18px; cursor:pointer;}
@@ -311,6 +313,15 @@
   <!-- SUMMARY -->
   <section id="page-summary" class="page">
     <div id="summaryContent"></div>
+
+    <div class="card" style="margin-top:14px;">
+      <label style="margin-top:0;">Help</label>
+      <p class="note" style="text-align:left; margin:4px 0 12px;">
+        The Fairpot User Guide and Quick Start explain every screen, with pictures.
+        They open on the Cuberoot Systems website.
+      </p>
+      <a class="guidebtn" href="https://www.cuberoot-systems.com/fairpot/guide/" target="_blank" rel="noopener">Open the User Guide</a>
+    </div>
 
     <div class="card" style="margin-top:14px;">
       <label style="margin-top:0;">Home currency</label>
@@ -486,7 +497,7 @@
 <script>
 'use strict';
 
-var APP_VERSION = '0.5.0';
+var APP_VERSION = '0.5.1';
 
 /* ======================================================================
    STORAGE — SQLite on the phone, one transaction per change

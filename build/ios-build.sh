@@ -37,9 +37,9 @@ plutil -replace NSCameraUsageDescription -string "Fairpot uses the camera to pho
 plutil -replace NSPhotoLibraryUsageDescription -string "Fairpot opens your photo library so you can attach a receipt photo to an expense." "$PLIST"
 plutil -replace CFBundleDisplayName -string "Fairpot" "$PLIST"
 # Export compliance: the SQLite component includes an encryption library (SQLCipher),
-# although Fairpot's database is NOT encrypted. The answer is given in App Store
-# Connect for now (see STORE-LISTING.md); set it here once confirmed:
-#   plutil -replace ITSAppUsesNonExemptEncryption -bool NO "$PLIST"
+# but Fairpot's database is NOT encrypted; the only encryption used is HTTPS through iOS,
+# which is exempt. Same answer as given in App Store Connect for builds 8 and 9.
+plutil -replace ITSAppUsesNonExemptEncryption -bool NO "$PLIST"
 
 echo "--- App icon"
 ICONSET=ios/App/App/Assets.xcassets/AppIcon.appiconset
