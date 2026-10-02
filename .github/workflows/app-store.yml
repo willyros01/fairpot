@@ -1,0 +1,47 @@
+# Fairpot — App Store setup through the App Store Connect API.
+# Runs when store/request.txt changes. "mode = survey" only reads; "mode = apply" fills the store page.
+# The result is saved on the ci-logs branch under store/.
+name: App Store setup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "store/request.txt"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: app-store
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          MODE=$(sed -n 's/^mode *= *//p' store/request.txt)
+          if [ "$MODE" = "apply" ]; then node store/apply.mjs; else node store/survey.mjs; fi
+      - name: Save result to ci-logs branch
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/r" && cp -r store/result/. "$RUNNER_TEMP/r/" 2>/dev/null || echo "no result" > "$RUNNER_TEMP/r/none.txt"
+          rm -rf store/result
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git fetch origin ci-logs && git checkout ci-logs
+          mkdir -p store && cp -r "$RUNNER_TEMP/r/." store/
+          git add store
+          git commit -m "App Store setup: run ${{ github.run_number }}" || true
+          git push origin ci-logs
