@@ -8,7 +8,7 @@ OK   Price: Free
 OK   Availability: every country, plus new ones automatically — already set
 OK   Version 1.0.0, copyright, release after approval
 OK   Description, keywords, promotional text, support and marketing URLs
-OK   App Review information (name, email, notes) — skipped — Apple needs a phone number, entered in App Store Connect
+OK   App Review information (name, email, notes)
 SKIP Screenshots APP_IPHONE_67 (already uploaded)
 SKIP Screenshots APP_IPAD_PRO_3GEN_129 (already uploaded)
 OK   Attach build 12
