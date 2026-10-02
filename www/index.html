@@ -178,6 +178,22 @@
   .toast.show{opacity:1;}
   .note{font-size:12px; color:var(--sub); text-align:center; margin-top:10px;}
 
+  /* iPad and other wide screens (v1.0.0): use the width instead of one narrow column */
+  @media (min-width:760px){
+    header{max-width:1040px; margin:0 auto; padding-left:28px; padding-right:28px;}
+    header h1{font-size:32px;}
+    main{max-width:1040px; padding:0 28px;}
+    #page-new.active{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:18px; align-items:start;}
+    #page-new.active > .card{margin:0;}
+    #page-new.active > #storageNote{grid-column:1 / -1;}
+    #txList{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; align-items:start;}
+    #txList > .tx-wrap{margin:0;}
+    #txList > .empty{grid-column:1 / -1;}
+    #page-summary.active{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px; align-items:start;}
+    #settingsCol > .card:first-child{margin-top:18px !important;}
+    #summaryContent > .empty{margin-top:18px;}
+    .modal .card{max-width:600px;}
+  }
   /* terms of use (v0.5.0) — large text, shown full screen on first use */
   body.locked header, body.locked main, body.locked nav{display:none !important;}
   #termsGate{display:none; position:fixed; inset:0; z-index:300; background:var(--bg); overflow:auto;
@@ -314,6 +330,7 @@
   <section id="page-summary" class="page">
     <div id="summaryContent"></div>
 
+    <div id="settingsCol">
     <div class="card" style="margin-top:14px;">
       <label style="margin-top:0;">Help</label>
       <p class="note" style="text-align:left; margin:4px 0 12px;">
@@ -385,6 +402,7 @@
       <div class="btnrow" style="margin-top:0;">
         <button class="secondary" type="button" onclick="termsView()">Read the terms</button>
       </div>
+    </div>
     </div>
   </section>
 </main>
@@ -497,7 +515,7 @@
 <script>
 'use strict';
 
-var APP_VERSION = '0.5.2';
+var APP_VERSION = '1.0.0';
 
 /* ======================================================================
    STORAGE — SQLite on the phone, one transaction per change

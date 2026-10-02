@@ -1,6 +1,6 @@
 {
   "name": "fairpot",
-  "version": "0.5.2",
+  "version": "1.0.0",
   "private": true,
   "description": "Fairpot \u2014 split shared expenses. Native iOS/Android app built with Capacitor from Split It v5.0.",
   "scripts": {

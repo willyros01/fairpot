@@ -133,6 +133,11 @@ Version history
     willyros01@gmail.com (was the GitHub issues page, which needs a GitHub account).
     Terms stay version 1: only the contact line changed, no new acceptance needed.
 
+  v1.0.0 (Oct 2, 2026) — first App Store version.
+    iPad and other wide screens (760 px and up): New screen in two columns (details |
+    receipts and shares), History in two columns, Summary with totals on the left and
+    settings on the right. iPhone layout unchanged.
+
 Notes
   The workflow file in the repo is named iOS-testflight.yml (capital iOS). It
   works as is. It is NOT included in this zip, so it can't be duplicated.
