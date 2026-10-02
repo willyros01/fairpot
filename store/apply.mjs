@@ -39,20 +39,26 @@ await step('Subtitle and privacy policy URL', async () => {
 
 await step('Age rating (every answer None / No)', async () => {
   if (!ageDecl) throw new Error('no age rating declaration');
+  // Yes/no questions take false; how-often questions take NONE. Apple checks the whole
+  // questionnaire at once, so send it all together and correct any type Apple rejects.
   const skip = new Set(['kidsAgeBand', 'gracRatingClassificationNumber', 'developerAgeRatingInfoUrl', 'ageRatingOverride', 'ageRatingOverrideV2', 'koreaAgeRatingOverride']);
-  const set = [], bad = [];
-  for (const [k, v] of Object.entries(ageDecl.attributes)) {
-    if (skip.has(k) || (v !== null && v !== undefined)) continue;
-    let ok = false;
-    for (const val of [false, 'NONE']) {
-      try { await api(`/v1/ageRatingDeclarations/${ageDecl.id}`, 'PATCH', { data: { type: 'ageRatingDeclarations', id: ageDecl.id, attributes: { [k]: val } } }); set.push(`${k}=${val}`); ok = true; break; }
-      catch (e) { if (e.status !== 409 && e.status !== 422 && e.status !== 400) throw e; }
+  const yesNo = new Set(['messagingAndChat', 'parentalControls', 'advertising', 'unrestrictedWebAccess', 'lootBox', 'healthOrWellnessTopics',
+    'socialMedia', 'ageAssurance', 'userGeneratedContent', 'gambling', 'socialMediaAgeRestricted']);
+  const attrs = {};
+  for (const k of Object.keys(ageDecl.attributes)) if (!skip.has(k)) attrs[k] = yesNo.has(k) ? false : 'NONE';
+  for (let i = 0; i < 30; i++) {
+    try {
+      await api(`/v1/ageRatingDeclarations/${ageDecl.id}`, 'PATCH', { data: { type: 'ageRatingDeclarations', id: ageDecl.id, attributes: attrs } });
+      log('     ' + JSON.stringify(attrs));
+      return Object.keys(attrs).length + ' answers';
+    } catch (e) {
+      log('     try ' + (i + 1) + ': ' + e.message.slice(0, 400));
+      const m = [...e.message.matchAll(/attributes\/(\w+)/g)].map((x) => x[1]).filter((k) => k in attrs);
+      if (!m.length) throw e;
+      for (const k of new Set(m)) attrs[k] = attrs[k] === false ? 'NONE' : (attrs[k] === 'NONE' ? false : 'NONE');
     }
-    if (!ok) bad.push(k);
   }
-  log('     set: ' + set.join(', '));
-  if (bad.length) throw new Error('could not set: ' + bad.join(', '));
-  return set.length + ' answers';
+  throw new Error('gave up');
 });
 
 await step('Price: Free', async () => {
@@ -69,6 +75,7 @@ await step('Price: Free', async () => {
 });
 
 await step('Availability: every country, plus new ones automatically', async () => {
+  try { await api(`/v1/apps/${app.id}/appAvailabilityV2`); return 'already set'; } catch (e) { if (e.status !== 404) throw e; }
   const terr = []; let next = '/v1/territories?limit=200';
   while (next) { const t = await api(next); terr.push(...t.data.map((x) => x.id)); next = t.links && t.links.next; }
   await api('/v2/appAvailabilities', 'POST', {
@@ -96,6 +103,7 @@ else {
       attributes: { description: L.description, keywords: L.keywords, promotionalText: L.promotionalText, supportUrl: L.supportUrl, marketingUrl: L.marketingUrl } } });
   });
   await step('App Review information (name, email, notes)', async () => {
+    if (!L.review.contactPhone) return 'skipped — Apple needs a phone number, entered in App Store Connect';
     const rd = (vers.included || []).find((x) => x.type === 'appStoreReviewDetails' && ver.relationships.appStoreReviewDetail.data && x.id === ver.relationships.appStoreReviewDetail.data.id);
     if (rd) await api(`/v1/appStoreReviewDetails/${rd.id}`, 'PATCH', { data: { type: 'appStoreReviewDetails', id: rd.id, attributes: L.review } });
     else await api('/v1/appStoreReviewDetails', 'POST', { data: { type: 'appStoreReviewDetails', attributes: L.review,
@@ -103,6 +111,7 @@ else {
   });
 
   for (const [displayType, files] of Object.entries(L.screenshots)) {
+    if (L.skipScreenshots) { log(`SKIP Screenshots ${displayType} (already uploaded)`); continue; }
     await step(`Screenshots ${displayType} (${files.length})`, async () => {
       if (!vloc) throw new Error('no version localization');
       const sets = await api(`/v1/appStoreVersionLocalizations/${vloc.id}/appScreenshotSets?filter[screenshotDisplayType]=${displayType}`);

@@ -39,5 +39,6 @@
    "ipad-4-history.png",
    "ipad-5-summary.png"
   ]
- }
+ },
+ "skipScreenshots": true
 }
