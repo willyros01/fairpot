@@ -4,8 +4,10 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { api, BUNDLE } from './asc.mjs';
+import { open as openSealed } from './sealed.mjs';
 
 const L = JSON.parse(fs.readFileSync('store/listing.json', 'utf8'));
+if (fs.existsSync('store/review-phone.sealed.json')) L.review.contactPhone = openSealed('store/review-phone.sealed.json');
 const out = []; const log = (s) => { console.log(s); out.push(s); };
 const done = []; const failed = [];
 async function step(name, fn) {
