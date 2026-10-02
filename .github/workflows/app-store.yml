@@ -32,7 +32,10 @@ jobs:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
           MODE=$(sed -n 's/^mode *= *//p' store/request.txt)
-          if [ "$MODE" = "apply" ]; then node store/apply.mjs; else node store/survey.mjs; fi
+          if [ "$MODE" = "apply" ]; then node store/apply.mjs
+          elif [ "$MODE" = "pubkey" ]; then mkdir -p store/result && node -e "import('./store/sealed.mjs').then(m=>process.stdout.write(m.publicPem()))" > store/result/pubkey.pem
+          elif [ "$MODE" = "submit" ]; then node store/submit.mjs
+          else node store/survey.mjs; fi
       - name: Save result to ci-logs branch
         if: always()
         run: |
