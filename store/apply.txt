@@ -2,19 +2,16 @@ Fairpot app 6816560336
 OK   Content rights
 OK   Categories (Finance, Travel)
 OK   Subtitle and privacy policy URL
-     set: 
-FAIL Age rating (every answer None / No) — could not set: messagingAndChat, sexualContentGraphicAndNudity, gambling, horrorOrFearThemes, parentalControls, advertising, violenceRealisticProlongedGraphicOrSadistic, matureOrSuggestiveThemes, healthOrWellnessTopics, unrestrictedWebAccess, violenceCartoonOrFantasy, medicalOrTreatmentInformation, lootBox, alcoholTobaccoOrDrugUseOrReferences, gamblingSimulated, violenceRealistic, profanityOrCrudeHumor, socialMedia, contests, ageAssurance, userGeneratedContent, gunsOrOtherWeapons, socialMediaAgeRestricted, sexualContentOrNudity
+     {"messagingAndChat":false,"sexualContentGraphicAndNudity":"NONE","gambling":false,"horrorOrFearThemes":"NONE","parentalControls":false,"advertising":false,"violenceRealisticProlongedGraphicOrSadistic":"NONE","matureOrSuggestiveThemes":"NONE","healthOrWellnessTopics":false,"unrestrictedWebAccess":false,"violenceCartoonOrFantasy":"NONE","medicalOrTreatmentInformation":"NONE","lootBox":false,"alcoholTobaccoOrDrugUseOrReferences":"NONE","gamblingSimulated":"NONE","violenceRealistic":"NONE","profanityOrCrudeHumor":"NONE","socialMedia":false,"contests":"NONE","ageAssurance":false,"userGeneratedContent":false,"gunsOrOtherWeapons":"NONE","socialMediaAgeRestricted":false,"sexualContentOrNudity":"NONE"}
+OK   Age rating (every answer None / No) — 24 answers
 OK   Price: Free
-OK   Availability: every country, plus new ones automatically — 175 countries
+OK   Availability: every country, plus new ones automatically — already set
 OK   Version 1.0.0, copyright, release after approval
 OK   Description, keywords, promotional text, support and marketing URLs
-FAIL App Review information (name, email, notes) — POST /v1/appStoreReviewDetails -> HTTP 409 [{"id":"85fa2aa2-0070-4ca8-b000-9120819235f8","status":"409","code":"ENTITY_ERROR.ATTRIBUTE.REQUIRED","title":"The provided entity is missing a required attribute","detail":"You must provide a value for the attribute 'contactPhone' with this request","source":{"pointer":"/data/attributes/contactPhone"}},{"id":"bda2da9c-c092-42a5-b594-2bf536dfbd47","status":"409","code":"ENTITY_ERROR.ATTRIBUTE.INVALID","title":"An attribute value is invalid.","detail":"The phone number must be in a valid format. Preface the phone number with ‘+’ followed by the country code (for example, +44 844 209 0611)","source":{"pointer":"/data/attributes/contactPhone"}}]
-OK   Screenshots APP_IPHONE_67 (7) — all accepted
-OK   Screenshots APP_IPAD_PRO_3GEN_129 (5) — all accepted
-     build 12: not visible yet — waiting
-     build 12: not visible yet — waiting
-     build 12: not visible yet — waiting
+OK   App Review information (name, email, notes) — skipped — Apple needs a phone number, entered in App Store Connect
+SKIP Screenshots APP_IPHONE_67 (already uploaded)
+SKIP Screenshots APP_IPAD_PRO_3GEN_129 (already uploaded)
 OK   Attach build 12
 
-DONE 10   FAILED 2: Age rating (every answer None / No) / App Review information (name, email, notes)
+DONE 10   FAILED 0
 Still manual in App Store Connect: App Privacy ("Data Not Collected"), the review contact phone number, then Add for Review → Submit.
