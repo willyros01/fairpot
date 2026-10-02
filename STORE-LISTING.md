@@ -1,5 +1,9 @@
 # Fairpot — App Store listing and answers
 
+> The live values are in store/listing.json; store/apply.mjs (workflow "App Store setup",
+> run by changing store/request.txt) puts them into App Store Connect, with the
+> screenshots in store/screenshots/. Manual steps left: App Privacy, review phone, Submit.
+
 Everything App Store Connect asks for, ready to copy. Character limits are Apple's.
 
 ---
@@ -71,7 +75,12 @@ First release.
 
 ---
 
-## Export compliance (encryption) — needs your decision
+## Export compliance (encryption) — settled
+
+Answered as exempt (HTTPS through iOS only) and built into the app since 0.5.1
+(ITSAppUsesNonExemptEncryption = NO in build/ios-build.sh).
+
+### Earlier note
 
 The SQLite component (@capacitor-community/sqlite) always includes an encryption library
 (SQLCipher), even though **Fairpot's database is not encrypted** and Fairpot uses no encryption of

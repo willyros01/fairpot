@@ -1,2 +1,3 @@
 Change this file and push to run the App Store setup.
-mode = survey
+mode = apply
+run = 1
