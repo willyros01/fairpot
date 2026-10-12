@@ -9,6 +9,8 @@ on:
       - "capacitor.config.json"
       - "build/android-build.sh"
       - "build/android-native.sh"
+      - "build/AndroidIcons.java"
+      - "resources/icon.png"
       - ".github/workflows/android-apk.yml"
   workflow_dispatch:
 
