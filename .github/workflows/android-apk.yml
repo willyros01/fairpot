@@ -8,6 +8,7 @@ on:
       - "package.json"
       - "capacitor.config.json"
       - "build/android-build.sh"
+      - "build/android-sign.sh"
       - "build/android-native.sh"
       - "build/AndroidIcons.java"
       - "resources/icon.png"
@@ -25,8 +26,17 @@ jobs:
   apk:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      FAIRPOT_SIGNING_KEYSTORE_BASE64: ${{ secrets.FAIRPOT_SIGNING_KEYSTORE_BASE64 }}
+      FAIRPOT_SIGNING_PASSWORD: ${{ secrets.FAIRPOT_SIGNING_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+      - name: Require permanent Android signing secrets
+        run: |
+          if [ -z "$FAIRPOT_SIGNING_KEYSTORE_BASE64" ] || [ -z "$FAIRPOT_SIGNING_PASSWORD" ]; then
+            echo "::error title=Android signing not configured::Set FAIRPOT_SIGNING_KEYSTORE_BASE64 and FAIRPOT_SIGNING_PASSWORD in repository Actions secrets; refusing an ephemeral debug-signed APK."
+            exit 1
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -40,7 +50,7 @@ jobs:
           test -d "$ANDROID_HOME/platforms"
           echo "Android SDK: $ANDROID_HOME"
           ls "$ANDROID_HOME/platforms"
-      - name: Build debug-signed Android APK
+      - name: Build permanently signed Android test APK
         run: bash build/android-build.sh
       - name: Upload test APK
         uses: actions/upload-artifact@v4
