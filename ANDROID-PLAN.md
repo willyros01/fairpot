@@ -68,3 +68,17 @@ Status: Previous Android APK passed and was published. On 2026-10-12, permanent 
 - Keep original app installed until first new permanent APK is built, published, the backup is held independently and accessible, and the user authorizes uninstall.
 - After uninstall and reinstall, use Fairpot Summary → Restore Backup to import JSON, then confirm expense, photo, categories, payment methods, and restart persistence. Do not delete backup; retain a known-good backup outside Fire tablet.
 - An APK under the new stable key can update future APKs signed under that same key, subject to Android versionCode and device acceptance testing. This cannot recover the previous ephemeral signing key.
+
+## Fire HD 8 backup routing regression — 2026-10-12
+
+**DEVICE TEST:** User installed the persistent-key signed Android APK (GitHub Actions run 38307131967) on Fire HD 8. Imported the previously verified backup successfully, including the expense and JPEG receipt photo. Despite code for Android's direct-Downloads Java plugin being embedded, pressing **Summary → Save backup** still displayed **Android Share (Email/Alexa)**, not a saved file.
+
+**ROOT CAUSE (source-confirmed):** The existing vanilla WebView JS used `CapNS.registerPlugin('FairpotDocument')` gated on `window.Capacitor.registerPlugin`. The injected Capacitor native WebView exposes its local Java plugins as `window.Capacitor.Plugins.FairpotDocument`; the `registerPlugin` export belongs to the separately imported `@capacitor/core` module and is not a safe assumption on the injected global. Therefore `AndroidSave` was null, and `exportBackup()` silently chose iOS native Share as fallback. This is a JS-to-native adapter defect, **not** an Android storage permissions problem.
+
+**FIX:** In `www/index.html`, identify Android explicitly and use the native bridge's `CapNS.Plugins.FairpotDocument` with direct `saveToDownloads()`. If unavailable/rejected, show explicit **Backup was NOT saved** error and never use Share on Android. Keep iOS Share and browser download behavior unmodified. Native Java plugin still saves via MediaStore Downloads (Fire OS 8) or legacy Downloads (older Android). No chooser required: Fire OS previously failed with `ACTION_CREATE_DOCUMENT`; direct Downloads is the approved solution.
+
+**REGRESSION GATE:** `build/test-android-backup.cjs` simulates real app JavaScript declarations + `exportBackup()` under native Android and iOS, asserting Android writes to Downloads, includes the receipt JPEG, never shares on missing/rejecting native plugin, never marks failed backup as saved, and preserves iOS Share. `build/android-build.sh` invokes the test before compilation; Android CI includes the test in trigger paths.
+
+**NEXT FIRE HD 8 DEVICE TEST:** Wait for signed APK build and exact published build metadata to match; install new website APK **over current app** (same stable signing certificate; no uninstall). Confirm all restored records/photos remain. Then Summary → Save backup; it should show **Backup saved on this device / Downloads**, not Share. Verify new JSON file exists and can be read with the file manager. If native bridge unavailable, send the displayed explicit error; do not claim device success until verified.
+
+**DATA PRESERVATION:** Do not uninstall the newly installed, persistent-signed app and do not delete separate backup file. This bug does not require a database or signing-key migration.
