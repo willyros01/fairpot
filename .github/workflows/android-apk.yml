@@ -8,6 +8,7 @@ on:
       - "package.json"
       - "capacitor.config.json"
       - "build/android-build.sh"
+      - "build/android-native.sh"
       - ".github/workflows/android-apk.yml"
   workflow_dispatch:
 
@@ -73,6 +74,11 @@ jobs:
               source_sha: context.sha,
               outcome: result,
               artifact_name: result === 'success' ? 'fairpot-android-test-apk' : null,
+              publication: {
+                destination: 'https://www.cuberoot-systems.com/downloads/fairpot.apk',
+                state: result === 'success' ? 'queued-for-cuberoot-publisher' : 'not-requested',
+                mechanism: 'Cuberoot publisher polls this verified build report'
+              },
               reported_at: new Date().toISOString(),
               jobs: []
             };
