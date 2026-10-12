@@ -1920,10 +1920,13 @@ function exportBackup(){
     });
     var name = 'fairpot-backup-' + todayStr() + '.json';
     if (AndroidSave) {
-      return AndroidSave.save({fileName:name, data:payload}).then(function(r){
-        if (!r || !r.saved) { toast('Backup cancelled — no file saved'); return; }
-        markBackedUp(); toast('Backup saved to selected location');
-      }).catch(function(e){toast('Backup was not saved: '+String(e && e.message || e).slice(0,85));});
+      return AndroidSave.saveToDownloads({fileName:name, data:payload}).then(function(r){
+        if (!r || !r.saved) throw new Error('The backup was not written');
+        markBackedUp();
+        alert('Backup saved on this device.\n\nLocation: Downloads\nFile: ' + (r.fileName || name));
+      }).catch(function(e){
+        alert('Backup was NOT saved.\n\n' + String(e && e.message || e).slice(0,220));
+      });
     }
     if (isNative && ShareP) {
       return FS.writeFile({ path: name, directory: 'CACHE', encoding: 'utf8', data: payload })
