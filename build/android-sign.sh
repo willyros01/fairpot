@@ -4,8 +4,8 @@
 set -euo pipefail
 umask 077
 
-: "\${FAIRPOT_SIGNING_KEYSTORE_BASE64:?Missing GitHub secret FAIRPOT_SIGNING_KEYSTORE_BASE64}"
-: "\${FAIRPOT_SIGNING_PASSWORD:?Missing GitHub secret FAIRPOT_SIGNING_PASSWORD}"
+: "${FAIRPOT_SIGNING_KEYSTORE_BASE64:?Missing GitHub secret FAIRPOT_SIGNING_KEYSTORE_BASE64}"
+: "${FAIRPOT_SIGNING_PASSWORD:?Missing GitHub secret FAIRPOT_SIGNING_PASSWORD}"
 
 APP="android/app"
 test -f "$APP/build.gradle"
