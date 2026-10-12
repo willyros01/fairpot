@@ -545,6 +545,8 @@ var isNative = !!(CapNS && CapNS.isNativePlatform && CapNS.isNativePlatform());
 var SQL = isNative && CapNS.Plugins ? CapNS.Plugins.CapacitorSQLite : null;
 var FS = isNative && CapNS.Plugins ? CapNS.Plugins.Filesystem : null;
 var ShareP = isNative && CapNS.Plugins ? CapNS.Plugins.Share : null;
+var AndroidSave = isNative && CapNS.getPlatform && CapNS.getPlatform() === 'android' && CapNS.registerPlugin ? CapNS.registerPlugin('FairpotDocument') : null;
+var AndroidCamera = isNative && CapNS.getPlatform && CapNS.getPlatform() === 'android' && CapNS.Plugins ? CapNS.Plugins.Camera : null;
 var DBNAME = 'fairpot';
 var SCHEMA_VERSION = 1;
 
@@ -1219,7 +1221,24 @@ function setItemAmt(i, val){
 }
 function pickPhoto(i){
   photoTargetIndex = i;
+  if (AndroidCamera) {
+    AndroidCamera.getPhoto({quality:90,allowEditing:false,resultType:'base64',source:'PROMPT',promptLabelHeader:'Receipt photo',promptLabelPhoto:'Choose from Gallery',promptLabelPicture:'Take Photo'}).then(function(photo){
+      if (!items[i] || !photo || !photo.base64String) return;
+      var dataURL='data:image/' + (photo.format || 'jpeg') + ';base64,' + photo.base64String;
+      compressPhotoData(dataURL,function(data){
+        if(!data){toast('Could not read that photo');return;}
+        makeThumb(data,function(thumb){if(!items[i])return;items[i].photo={thumb:thumb||data,full:data};renderItems();recalc();});
+      });
+    }).catch(function(err){
+      var msg=String(err && err.message || err || '');
+      if(!/cancel|dismiss|user cancelled/i.test(msg)) toast('Camera unavailable: '+msg.slice(0,90));
+    });
+    return;
+  }
   $('photoInput').click();
+}
+function compressPhotoData(data,cb){
+  fetch(data).then(function(r){return r.blob();}).then(function(blob){compressImage(blob,cb);}).catch(function(){cb(null);});
 }
 function clearItemPhoto(i){
   items[i].photo = null;
@@ -1900,6 +1919,12 @@ function exportBackup(){
       home: HOME, txs: list, cats: getCats(), pay: getPay()
     });
     var name = 'fairpot-backup-' + todayStr() + '.json';
+    if (AndroidSave) {
+      return AndroidSave.save({fileName:name, data:payload}).then(function(r){
+        if (!r || !r.saved) { toast('Backup cancelled — no file saved'); return; }
+        markBackedUp(); toast('Backup saved to selected location');
+      }).catch(function(e){toast('Backup was not saved: '+String(e && e.message || e).slice(0,85));});
+    }
     if (isNative && ShareP) {
       return FS.writeFile({ path: name, directory: 'CACHE', encoding: 'utf8', data: payload })
         .then(function(){ return FS.getUri({ path: name, directory: 'CACHE' }); })
