@@ -545,7 +545,10 @@ var isNative = !!(CapNS && CapNS.isNativePlatform && CapNS.isNativePlatform());
 var SQL = isNative && CapNS.Plugins ? CapNS.Plugins.CapacitorSQLite : null;
 var FS = isNative && CapNS.Plugins ? CapNS.Plugins.Filesystem : null;
 var ShareP = isNative && CapNS.Plugins ? CapNS.Plugins.Share : null;
-var AndroidSave = isNative && CapNS.getPlatform && CapNS.getPlatform() === 'android' && CapNS.registerPlugin ? CapNS.registerPlugin('FairpotDocument') : null;
+var isAndroid = !!(isNative && CapNS.getPlatform && CapNS.getPlatform() === 'android');
+/* Vanilla Capacitor native WebView exposes local plugins through Plugins,
+   NOT through the @capacitor/core module's registerPlugin export. */
+var AndroidSave = isAndroid && CapNS.Plugins ? CapNS.Plugins.FairpotDocument : null;
 var AndroidCamera = isNative && CapNS.getPlatform && CapNS.getPlatform() === 'android' && CapNS.Plugins ? CapNS.Plugins.Camera : null;
 var DBNAME = 'fairpot';
 var SCHEMA_VERSION = 1;
@@ -1919,7 +1922,13 @@ function exportBackup(){
       home: HOME, txs: list, cats: getCats(), pay: getPay()
     });
     var name = 'fairpot-backup-' + todayStr() + '.json';
-    if (AndroidSave) {
+    // Android Save Backup must NEVER fall through to the Share sheet.
+    // If native Downloads is missing, tell the user explicitly; don't claim success.
+    if (isAndroid) {
+      if (!AndroidSave || typeof AndroidSave.saveToDownloads !== 'function') {
+        alert('Backup was NOT saved.\n\nAndroid Downloads service is unavailable in this build.');
+        return;
+      }
       return AndroidSave.saveToDownloads({fileName:name, data:payload}).then(function(r){
         if (!r || !r.saved) throw new Error('The backup was not written');
         markBackedUp();
