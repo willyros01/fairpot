@@ -9,6 +9,7 @@ on:
       - "capacitor.config.json"
       - "build/android-build.sh"
       - "build/android-sign.sh"
+      - "build/test-android-backup.cjs"
       - "build/setup-android-signing.sh"
       - "build/android-native.sh"
       - "build/AndroidIcons.java"
