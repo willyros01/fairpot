@@ -23,7 +23,7 @@ test -n "$SDK"
 SIGNER="$(find "$SDK/build-tools" -name apksigner -type f | sort -V | tail -1)"
 test -n "$SIGNER"
 "$SIGNER" verify --verbose --print-certs "$APK"
-ACTUAL="$("$SIGNER" verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: *//p' | head -1 | tr 'A-F' 'a-f')"
+ACTUAL="$("$SIGNER" verify --print-certs "$APK" | sed -n 's/^.*certificate SHA-256 digest: *//p' | head -1 | tr 'A-F' 'a-f')"
 EXPECTED="$(keytool -list -v -keystore app/fairpot-signing.p12 -storetype PKCS12 -storepass "$FAIRPOT_SIGNING_PASSWORD" -alias fairpot | sed -n 's/^[[:space:]]*SHA256: *//p' | head -1 | tr -d ':' | tr 'A-F' 'a-f')"
 test -n "$ACTUAL" && test "$ACTUAL" = "$EXPECTED" || { echo "::error title=APK signer mismatch::Unexpected Android signing identity"; exit 1; }
 echo "Verified persistent APK certificate SHA256: $ACTUAL"
