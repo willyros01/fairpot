@@ -82,3 +82,10 @@ Status: Previous Android APK passed and was published. On 2026-10-12, permanent 
 **NEXT FIRE HD 8 DEVICE TEST:** Wait for signed APK build and exact published build metadata to match; install new website APK **over current app** (same stable signing certificate; no uninstall). Confirm all restored records/photos remain. Then Summary → Save backup; it should show **Backup saved on this device / Downloads**, not Share. Verify new JSON file exists and can be read with the file manager. If native bridge unavailable, send the displayed explicit error; do not claim device success until verified.
 
 **DATA PRESERVATION:** Do not uninstall the newly installed, persistent-signed app and do not delete separate backup file. This bug does not require a database or signing-key migration.
+
+### Signed APK build and website release result — 2026-10-12
+- Android Actions run **38310278448** at source SHA `f857c1999ef1f1f6d0c9c9fe20a97f066371f9e4` passed: 4 focused backup routing unit tests; full Gradle build; signed APK certificate check; GitHub artifact upload; successful result report.
+- Persistent Android signing certificate SHA256 `b740db9061c90f02a42f781aa53809e88871327c5b7c89eef02b550ea539d126` matched the previous installed permanent-signed build 38307131967. This should permit in-place upgrade without uninstall; device install still must be tested.
+- Artifact APK SHA256 `c371a50781d93086393947589a9117e465719c79520d92ba64484e4e1e793c0b`.
+- Cuberoot publisher run **38310799644** passed, `downloads/fairpot-build.json` matches successful Android run, source, checksum and signer. GitHub Pages deployment run **38310847801** passed.
+- The Fire HD 8 native `Save backup` fix is **NOT device-confirmed** until the user installs the new signed APK in-place, verifies existing restored expense/photo persist, taps Summary → Save backup, sees confirmed Downloads save (no Share), and checks the new JSON file actually exists.
