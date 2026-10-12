@@ -1,0 +1,19 @@
+{
+  "workflow": "Android APK test build",
+  "branch": "android",
+  "run_id": 38290077276,
+  "run_attempt": "1",
+  "run_url": "https://github.com/willyros01/fairpot/actions/runs/38290077276",
+  "source_sha": "adcd9a02ffcfd17b94b224d4a68f054b183304d2",
+  "outcome": "success",
+  "artifact_name": "fairpot-android-test-apk",
+  "reported_at": "2026-10-12T18:22:11.457Z",
+  "jobs": [
+    {
+      "name": "apk",
+      "conclusion": "success",
+      "failed_steps": []
+    }
+  ],
+  "artifact_id": 11765405877
+}
