@@ -1,24 +1,23 @@
 {
   "workflow": "Android APK test build",
   "branch": "android",
-  "run_id": 38293302768,
+  "run_id": 38296906588,
   "run_attempt": "1",
-  "run_url": "https://github.com/willyros01/fairpot/actions/runs/38293302768",
-  "source_sha": "96b02b9787f3545fa20f7aa0edb9ca09684c1634",
-  "outcome": "success",
-  "artifact_name": "fairpot-android-test-apk",
+  "run_url": "https://github.com/willyros01/fairpot/actions/runs/38296906588",
+  "source_sha": "fcdc10fd687dee69e218f5c2b2eec270d1083d5d",
+  "outcome": "cancelled",
+  "artifact_name": null,
   "publication": {
     "destination": "https://www.cuberoot-systems.com/downloads/fairpot.apk",
-    "state": "queued-for-cuberoot-publisher",
+    "state": "not-requested",
     "mechanism": "Cuberoot publisher polls this verified build report"
   },
-  "reported_at": "2026-10-12T18:51:53.013Z",
+  "reported_at": "2026-10-12T19:21:20.187Z",
   "jobs": [
     {
       "name": "apk",
-      "conclusion": "success",
+      "conclusion": "cancelled",
       "failed_steps": []
     }
-  ],
-  "artifact_id": 11766833833
+  ]
 }
