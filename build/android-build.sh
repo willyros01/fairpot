@@ -5,6 +5,7 @@ node --version
 npm install --no-audit --no-fund
 npx cap add android
 npx cap sync android
+bash build/android-native.sh
 cd android
 chmod +x ./gradlew
 ./gradlew --no-daemon assembleDebug
