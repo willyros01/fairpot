@@ -1,6 +1,6 @@
 # Fairpot Android APK — preparation boundary
 
-Status: ANDROID DEBUG APK CI PASSED (2026-10-12), artifact verified. Automatic debug APK publication to the Cuberoot website is authorized and configured; Android device acceptance tests and properly signed production release remain pending.
+Status: Previous Android APK passed and was published. On 2026-10-12, permanent Android test-APK signing became MANDATORY. New builds are blocked until BOTH private GitHub Actions signing secrets are supplied; a new permanently signed APK has not yet passed device acceptance. Production release is separately gated.
 
 ## Repository and branch policy
 - Repository: willyros01/fairpot. Do not create another repository.
@@ -21,8 +21,8 @@ Status: ANDROID DEBUG APK CI PASSED (2026-10-12), artifact verified. Automatic d
 1. Inspect current app source, iOS adapters, web assets, workflows and dependency lockfile. Record functional baseline before code changes.
 2. Add a Capacitor Android dependency matching the locked Capacitor major version; add Android sync/build scripts. Generate native Android project in `android/` only on the Android branch.
 3. Review native permissions and Capacitor SQLite, Filesystem, Share, receipt photos, backup import/export, network/offline handling, and keyboard/safe-area usability. Never assume equivalent iOS behavior proves Android.
-4. Establish a unique signing key and secure storage for it. Never commit signing credentials/keystore or secrets to Git.
-5. Debug APK build runs automatically on changes to Android sources. A properly signed production release build still needs a secure persistent keystore and separate acceptance testing.
+4. Establish a unique signing key and secure storage for it. Never commit signing credentials/keystore or secrets to Git. The new Android build fails closed without BOTH signing secrets; one-time setup script: `build/setup-android-signing.sh` (run in the user's own authenticated Google Cloud Shell).
+5. APK build runs automatically on changes to Android sources. Once secrets are installed, the Android **test** APK will be signed with a persistent private key, but it is still a debuggable test build, NOT a production release.
 6. Test on real Android: install/update path; cold start, persistence after force close, currencies, photos, editing/deleting, sharing, backups/restores (including web backup), offline mode, tablet layout, and permissions. Check any Android version/developer verification impacts at release time.
 7. User explicitly authorized automatic PUBLIC WEBSITE publication of successful **debug/test** APKs on 2026-10-12, before full device certification. The Cuberoot website's `/downloads/fairpot.apk` is the debug/test channel, not a production release. Production signing/release is separately gated.
 8. For upgrades, preserve Android application ID and signing key; verify an updated APK installs over the previous one and retains data.
@@ -49,3 +49,22 @@ Status: ANDROID DEBUG APK CI PASSED (2026-10-12), artifact verified. Automatic d
 - Build run 38296922424 from SHA `730bf543e5c538c191f8c94f78dfba92633bb7ca` **PASSED**, APK artifact `11768784351`. Downloaded and inspected actual APK: normal/round/adaptive launcher images and `FairpotDocument.saveToDownloads` appear in the artifact.
 - Device verification PENDING on Fire HD 8: (1) new launcher logo appears, (2) save backup opens no picker and creates a JSON file in Downloads, (3) the saved file opens/is valid and can be restored, (4) app data remain intact across update, restart and reinstall/restore.
 - Critical independently verified warning: APK signing certificates **differed between two consecutive debug builds**, so an update may be refused. Do NOT uninstall an existing installation containing expense data before safeguarding it in a separate location. Configure a stable private Android signing key as a separate future task; never commit credentials to the public repository.
+
+## Stable Android signing and data-migration protection — 2026-10-12
+
+**Authorization:** user said "go" after requesting permanent signing and verified backup migration. Scope: only `fairpot/android` and the already-authorized Cuberoot APK publishing workflow.
+
+**New signing architecture**
+- `build/android-sign.sh` decodes `FAIRPOT_SIGNING_KEYSTORE_BASE64` (GitHub Actions encrypted secret) to an ephemeral generated native Android project and wires Gradle debug variant to the **same** PKCS12 signing key; alias: `fairpot`; password secret: `FAIRPOT_SIGNING_PASSWORD`. The secrets are **never** printed, committed, or stored in GitHub history.
+- `build/android-build.sh` refuses to build without the correct PKCS12 secret, verifies the certificate digest of the built APK against the private keystore using `apksigner` and `keytool`, and removes key files when exiting the job.
+- `.github/workflows/android-apk.yml` injects the two repository Actions secrets and fails if either is missing. Unstable default Android debug signing **must never be used as a fallback** for new published APKs. Build status report and automated Cuberoot publishing stay wired.
+- `Cuberoot/main/build/publish-fairpot.sh` now downloads ONLY the exact successful GitHub artifact. It **must not** rebuild the package under another signing key. It verifies the signature, records `signer_sha256` in published metadata, and rejects unexpected signing-certificate changes for future versions.
+- One-time signing provision: `build/setup-android-signing.sh` generates the key on the user's OWN Cloud Shell, uses GitHub CLI to upload both as encrypted GitHub Actions secrets, and reuses exactly the same key if run again. It may require one GitHub CLI authorization and must NOT be run from an untrusted shell.
+- The Cloud Shell files `~/fairpot-sign/fairpot.p12` and `~/fairpot-sign/password.txt` **must be backed up privately and safely by the user**. Do not rely on Cloud Shell lifetime as the only key backup.
+
+**Existing Fire HD 8 migration**
+- At least one current test APK was signed under an old ephemeral debug key, so a newly permanent-key-signed APK will NOT install over it. Do not attempt to bypass signature checks.
+- User uploaded `fairpot-backup-2026-10-12.json`. Verified structural JSON contains one expense, one valid JPEG receipt photo, categories, and payment settings. The user ALSO has the copy they emailed/downloaded. JSON validity is not a substitute for on-device successful restore.
+- Keep original app installed until first new permanent APK is built, published, the backup is held independently and accessible, and the user authorizes uninstall.
+- After uninstall and reinstall, use Fairpot Summary → Restore Backup to import JSON, then confirm expense, photo, categories, payment methods, and restart persistence. Do not delete backup; retain a known-good backup outside Fire tablet.
+- An APK under the new stable key can update future APKs signed under that same key, subject to Android versionCode and device acceptance testing. This cannot recover the previous ephemeral signing key.
