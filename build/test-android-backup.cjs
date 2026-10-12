@@ -69,8 +69,8 @@ async function scenario(platform, androidPlugin) {
   vm.createContext(sandbox);
   vm.runInContext(source, sandbox, { filename: 'fairpot-backup-source.js' });
   sandbox.exportBackup();
-  // Four Promise microtask boundaries cover photo, native write, and handling.
-  for (let n = 0; n < 6; n++) await Promise.resolve();
+  // Let all queued promise reactions drain, including native Share on iOS.
+  await new Promise(resolve => setImmediate(resolve));
   return events;
 }
 
