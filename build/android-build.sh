@@ -2,6 +2,8 @@
 # Android test APK signed with ONE permanent private key. Not a production release.
 set -euo pipefail
 node --version
+# Run deterministic native bridge regression tests before costly Android compilation.
+node build/test-android-backup.cjs
 npm install --no-audit --no-fund
 npx cap add android
 npx cap sync android
