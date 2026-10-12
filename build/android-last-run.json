@@ -1,10 +1,10 @@
 {
   "workflow": "Android APK test build",
   "branch": "android",
-  "run_id": 38302308502,
+  "run_id": 38302384310,
   "run_attempt": "1",
-  "run_url": "https://github.com/willyros01/fairpot/actions/runs/38302308502",
-  "source_sha": "37a6608c5b19bd5a9a0769a006ef599635ab27d6",
+  "run_url": "https://github.com/willyros01/fairpot/actions/runs/38302384310",
+  "source_sha": "7ea6abf1689aadb06ae1842f4831fe59af7f21f3",
   "outcome": "failure",
   "artifact_name": null,
   "publication": {
@@ -12,13 +12,13 @@
     "state": "not-requested",
     "mechanism": "Cuberoot publisher polls this verified build report"
   },
-  "reported_at": "2026-10-12T20:09:20.866Z",
+  "reported_at": "2026-10-12T20:09:50.722Z",
   "jobs": [
     {
       "name": "apk",
       "conclusion": "failure",
       "failed_steps": [
-        "Build debug-signed Android APK"
+        "Require permanent Android signing secrets"
       ]
     }
   ]
