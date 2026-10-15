@@ -1,3 +1,9 @@
+## 2026-10-15 — Current handover qualification
+
+This document's v0.4.0 installation/setup steps are **historical**; read the current repository `README.md`, `STORE-LISTING.md`, and actual `main` GitHub Actions/App Store Connect state before describing any build as ready for release. App Store approval is not confirmed by a TestFlight upload. Android migration and device-backup details exist only on `android/ANDROID-PLAN.md`. Legacy `split` is an independent personal web repository and must not be changed as part of Fairpot releases. Frozen development; documentation-only updates allowed.
+
+---
+
 # Fairpot v0.4.0 — handover
 
 Fairpot is the public iOS app made from Split It v5.0. v0.4.0 contains everything planned
