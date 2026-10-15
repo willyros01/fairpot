@@ -1,3 +1,12 @@
+## 2026-10-15 — Fire Android migration/current evidence
+
+- `fairpot/android` contains the isolated permanent-key-signed Fire/Android implementation. Earlier signed build **38310278448** and Cuberoot published run **38310799644** passed CI, signing-identity and artifact publication checks according to this document. This is **not automatically proof of all Fire HD 8 flows**.
+- Physical device owner confirmed that a backup was restored successfully on Fire HD 8 including an expense, receipt image and supporting categories/payment settings using the permanent-key-signed installation (prior device testing). A later Android-only repair targeted **Save backup to Downloads**, which previously routed incorrectly to Share; the existing record marks the **post-repair device retest outstanding** unless separately confirmed.
+- Preserve `FAIRPOT_SIGNING_KEYSTORE_BASE64`/`FAIRPOT_SIGNING_PASSWORD` and the user's privately held keystore/key backup. Do not uninstall a working installation, migrate SQLite, swap signer, generate replacement keys or touch `fairpot/main` iOS/TestFlight and `split/main` to update docs. Exact same-signer APK in-place upgrades are preferable only after verified backup and device acceptance.
+- Cuberoot publisher must download the **already-built signed artifact** and fail closed on signature change. Development/build freeze still applies; maintain separate PASS/FAIL/UNTESTED labels and prove backup file visibility on device rather than assuming success from native source.
+
+---
+
 # Fairpot Android APK — preparation boundary
 
 Status: Previous Android APK passed and was published. On 2026-10-12, permanent Android test-APK signing became MANDATORY. New builds are blocked until BOTH private GitHub Actions signing secrets are supplied; a new permanently signed APK has not yet passed device acceptance. Production release is separately gated.
